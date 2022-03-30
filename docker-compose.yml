@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  yt2fd:
+    build: .
+    image: atareao/yt2fd:v2.0
+    env_file:
+      - ./.env
+    volumes:
+      - ./.toml:/app/conf/.toml
+      - ./ytids:/app/conf/ytids
