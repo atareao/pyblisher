@@ -179,6 +179,11 @@ class Table:
         columns = ','.join(cls.COLUMNS)
         sqlquery = f"SELECT {columns} FROM {cls.TABLE}"
         if condition:
+            if isinstance(condition, list):
+                if len(condition) > 1:
+                    condition = " AND ".join(condition)
+                else:
+                    condition = condition[0]
             sqlquery += f" WHERE {condition}"
         items = []
         result = cls.__select(sqlquery)

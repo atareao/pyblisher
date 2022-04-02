@@ -32,3 +32,16 @@ class Lista(Table):
                           "YT_ID TEXT, "
                           "TITLE TEXT, "
                           "REVERSE BOOLEAN)")
+
+    @classmethod
+    def find_by_yt_id(cls, yt_id):
+        return cls.select(f"yt_id='{yt_id}'")
+
+    @classmethod
+    def new(cls, yt_id, title, reverse):
+        lista = Lista.from_dict({"yt_id": yt_id, "title": title,
+            "reverse": reverse})
+        lista.save()
+        return lista
+
+

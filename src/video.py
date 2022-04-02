@@ -42,11 +42,16 @@ class Video(Table):
 
 
     @classmethod
-    def new(cls, yt_id, list_id):
+    def new(cls, yt_id, list_id, published):
         video = Video.from_dict({"yt_id": yt_id, "list_id": list_id,
-            "reverse": False})
+            "published": published})
         video.save()
         return video
+
+    @classmethod
+    def find_by_yt_id(cls, yt_id):
+        condition = f"yt_id={yt_id}"
+        return Video.select(condition)
 
 
 

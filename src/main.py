@@ -22,10 +22,54 @@
 # SOFTWARE.
 
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Body, Path
+from video import Video
+from lista import Lista
+from schedule import Schedule
+from table import Table
+from utils import Log
 
+Table.DATABASE = "database.db"
+Log.LEVEL = Log.DEBUG
+
+Video.inicializate()
+Lista.inicializate()
+Schedule.inicializate()
 app = FastAPI()
 
-@app.get("/")
-async def root():
-    return {"message": "Hola mundo!"}
+
+
+@app.get("/schedule/")
+async def get_schedule():
+    return Schedule.get_all()
+
+@app.get("/videos/")
+async def get_videos_for_list(list_id=None, published=None):
+    if list_id or published:
+        conditions = []
+        if list_id:
+            conditions.append(f"list_id={list_id}")
+        if published:
+            conditions.append(f"published is {published}")
+        return Video.select(conditions)
+
+@app.post("/videos/")
+async def create_video(yt_id: str = Body(...), list_id: str = Body(...),
+        published: bool = Body(...)):
+    db_video = Video.find_by_yt_id(yt_id)
+    if db_video:
+        return {"result": "KO", "msg": "Already exists"}
+    return Video.new(yt_id, list_id, published)
+
+@app.get("/listas/")
+async def get_listas():
+    return Lista.get_all()
+
+@app.post("/listas/")
+async def create_lista(yt_id: str = Body(...), title: str = Body(...),
+        reverse: bool = Body(...)):
+    db_lista = Lista.find_by_yt_id(yt_id)
+    if db_lista:
+        return {"result": "KO", "msg": "Already exists"}
+    return Lista.new(yt_id, title, reverse)
+

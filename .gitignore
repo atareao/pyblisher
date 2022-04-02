@@ -159,3 +159,5 @@ bin/
 lib64
 pyvenv.cfg
 share/
+include/
+load.sql

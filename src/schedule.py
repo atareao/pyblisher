@@ -31,6 +31,7 @@ class Schedule(Table):
                           f"{PK} INTEGER PRIMARY KEY AUTOINCREMENT,"
                           "DAY TEXT,"
                           "LIST_ID INTEGER,"
+                          "NORDER INTEGER,"
                           "PUBLISH BOOLEAN DEFAULT FALSE)")
 
     @classmethod
