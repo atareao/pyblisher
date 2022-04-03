@@ -23,6 +23,7 @@
 
 import sqlite3
 from utils import Log
+from collections import OrderedDict
 
 
 class NoUnikeys(Exception):
@@ -34,13 +35,13 @@ class NoUnikeys(Exception):
 class Table:
     DATABASE = '/app/database/database.db'
     TABLE = 'TABLE'
-    PK = 'id'
     CREATE_TABLE_QUERY = ''
     UNIKEYS = []
-    COLUMNS = []
+    COLUMNS = {}
 
     def __init__(self):
         for column in self.COLUMNS:
+            Log.debug(column)
             setattr(self, column, None)
 
     @classmethod
@@ -83,59 +84,59 @@ class Table:
         finally:
             if conn:
                 conn.close()
-        return None
+        return []
 
     @classmethod
     def __get_columns(cls):
-        conn = None
-        sqlquery = f"SELECT * FROM {cls.TABLE} LIMIT 1"
-        try:
-            conn = sqlite3.connect(cls.DATABASE)
-            cursor = conn.cursor()
-            Log.info(sqlquery)
-            cursor.execute(sqlquery)
-            columns = [description[0].lower()
-                       for description in cursor.description]
-            columns.sort()
-        except Exception as exception:
-            Log.error(exception)
-            columns = []
-        finally:
-            if conn:
-                conn.close()
-        return columns
+        columns = {}
+        sqlquery = f"PRAGMA table_info({cls.TABLE});"
+        data = cls.__select(sqlquery)
+        for row in data:
+            name = row[1].lower()
+            columns[name] = {"data_type": row[2], "pk": (row[5] == 1)}
+            if row[5] == 1:
+                cls.PK = name
+        return OrderedDict(columns)
 
     def set(self, column, value):
+        if value:
+            if self.COLUMNS[column]['data_type'] == 'INTEGER':
+                value = int(value) if value else None
+            elif self.COLUMNS[column]['data_type'] == 'TEXT':
+                value = str(value) if value else None
+            elif self.COLUMNS[column]['data_type'] == 'BOOLEAN':
+                value = bool(value) if value else None
         setattr(self, column, value)
 
     def get(self, column):
-        return getattr(self, column)
+        value = getattr(self, column)
+        if value:
+            if self.COLUMNS[column]['data_type'] == 'INTEGER':
+                return int(value)
+            elif self.COLUMNS[column]['data_type'] == 'TEXT':
+                return str(value)
+            elif self.COLUMNS[column]['data_type'] == 'BOOLEAN':
+                return bool(value)
+        return value
 
     @classmethod
     def from_dict(cls, adict):
         item = cls()
-        columns = cls.COLUMNS.copy()
-        pk = cls.PK.lower()
-        if pk in columns:
-            columns.remove(pk)
-        for column in columns:
-            if column in adict.keys():
+        for column in cls.COLUMNS:
+            if column in adict.keys() and cls.COLUMNS[column]['pk'] is False:
                 setattr(item, column, adict[column])
         return item
 
     @classmethod
     def from_list(cls, result):
         item = cls()
-        columns = cls.COLUMNS.copy()
-        if len(result) == len(columns) - 1:
-            columns.remove(cls.PK.lower())
-        for index, column in enumerate(columns):
+        for index, column in enumerate(cls.COLUMNS):
             setattr(item, column, result[index])
         return item
 
     def save(self):
-        keys = self.COLUMNS.copy()
-        pk = self.PK.lower()
+        keys = list(self.COLUMNS.keys())
+        pk = self.get_pk()
         if self.get(pk):
             keys.remove(pk)
             set_values = ",".join([f"{key}=?" for key in keys])
@@ -163,9 +164,10 @@ class Table:
             return len(items) > 0
         raise NoUnikeys
 
+
     @classmethod
     def get_by_id(cls, id):
-        pk = cls.PK.lower()
+        pk = cls.get_pk()
         condition = f"{pk}='{id}'"
         items = cls.select(condition)
         return items[0] if len(items) > 0 else None
@@ -175,10 +177,19 @@ class Table:
         return cls.select()
 
     @classmethod
+    def get_pk(cls):
+        for key, value in cls.COLUMNS.items():
+            if value['pk'] == True:
+                return key
+        return None
+
+
+    @classmethod
     def select(cls, condition=None):
         columns = ','.join(cls.COLUMNS)
         sqlquery = f"SELECT {columns} FROM {cls.TABLE}"
         if condition:
+            Log.info(condition)
             if isinstance(condition, list):
                 if len(condition) > 1:
                     condition = " AND ".join(condition)
@@ -208,7 +219,8 @@ class Table:
 
     def __repr__(self):
         name = type(self).__name__
-        id = self.get(self.PK.lower())
+        pk = self.get_pk()
+        id = self.get(pk)
         return f'<{name} {id}>'
 
     def __iter__(self):

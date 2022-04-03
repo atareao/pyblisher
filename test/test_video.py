@@ -26,7 +26,7 @@ import sys
 import os
 sys.path.append(os.path.join("../src"))
 from table import Table
-from lista import Lista
+from playlist import Playlist
 from video import Video
 
 Table.DATABASE = 'test.db'
@@ -35,7 +35,7 @@ class TestVideo(unittest.TestCase):
     def setUp(self):
         if os.path.exists(Table.DATABASE):
             os.remove(Table.DATABASE)
-        Lista.inicializate()
+        Playlist.inicializate()
         Video.inicializate()
 
     def tearDown(self):
@@ -43,7 +43,7 @@ class TestVideo(unittest.TestCase):
             os.remove(Table.DATABASE)
 
     def test_create(self):
-        alista = Lista.from_dict({"yt_id": "1", "title": "titulo1",
+        alista = Playlist.from_dict({"yt_id": "1", "title": "titulo1",
             "reverse": True})
         alista.save()
         avideo = Video.new("1", alista.yt_id)

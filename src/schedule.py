@@ -25,11 +25,10 @@ from table import Table
 
 class Schedule(Table):
     TABLE = 'SCHEDULE'
-    PK = 'ID'
     UNIKEYS = ['DAY']
     CREATE_TABLE_QUERY = (f"CREATE TABLE IF NOT EXISTS {TABLE}("
-                          f"{PK} INTEGER PRIMARY KEY AUTOINCREMENT,"
-                          "DAY TEXT,"
+                          "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+                          "DAY INTEGER,"
                           "LIST_ID INTEGER,"
                           "NORDER INTEGER,"
                           "PUBLISH BOOLEAN DEFAULT FALSE)")

@@ -34,11 +34,10 @@ Log.LEVEL = Log.DEBUG
 class Sample(Table):
     DATABASE = 'test.db'
     TABLE = 'SAMPLES'
-    PK = 'id'
     UNIKEYS = ['name']
     CREATE_TABLE_QUERY = f"""
     CREATE TABLE IF NOT EXISTS {TABLE}(
-    {PK} INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name STRING)
     """
 

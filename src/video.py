@@ -25,12 +25,16 @@ from table import Table
 
 class Video(Table):
     TABLE = 'VIDEOS'
-    PK = 'id'
     UNIKEYS = ['yt_id']
     CREATE_TABLE_QUERY = (f"CREATE TABLE IF NOT EXISTS {TABLE}("
-                          f"{PK} INTEGER PRIMARY KEY AUTOINCREMENT,"
+                          "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+                          "PLAYLIST_ID INTEGER,"
+                          "TITLE TEXT,"
+                          "DESCRIPTION TEXT,"
                           "YT_ID TEXT,"
-                          "LIST_ID INTEGER,"
+                          "POSITION INTEGER,"
+                          "DOWNLOAD_LINK TEXT,"
+                          "LINK TEXT,"
                           "PUBLISHED BOOLEAN)")
 
     @classmethod
@@ -50,8 +54,10 @@ class Video(Table):
 
     @classmethod
     def find_by_yt_id(cls, yt_id):
-        condition = f"yt_id={yt_id}"
-        return Video.select(condition)
+        items = cls.select(f"yt_id='{yt_id}'")
+        if items:
+            return items[0]
+        return None
 
 
 
