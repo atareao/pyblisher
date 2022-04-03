@@ -41,7 +41,6 @@ class Table:
 
     def __init__(self):
         for column in self.COLUMNS:
-            Log.debug(column)
             setattr(self, column, None)
 
     @classmethod
@@ -189,7 +188,6 @@ class Table:
         columns = ','.join(cls.COLUMNS)
         sqlquery = f"SELECT {columns} FROM {cls.TABLE}"
         if condition:
-            Log.info(condition)
             if isinstance(condition, list):
                 if len(condition) > 1:
                     condition = " AND ".join(condition)
