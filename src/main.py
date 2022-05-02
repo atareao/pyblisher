@@ -23,16 +23,17 @@
 
 
 import os
+import yt_dlp
 from dotenv import load_dotenv
-from datetime import datetime
-from fastapi import FastAPI, Body
+from fastapi import FastAPI
 from video import Video
 from table import Table
 from utils import Log
 from ytapi import YouTube
+from threading import Thread
 
 
-Table.DATABASE = "database.db"
+Table.DATABASE = "/app/database.db"
 Log.LEVEL = Log.DEBUG
 
 load_dotenv()
@@ -51,18 +52,25 @@ async def update():
     yt_channel = os.getenv("YT_CHANNEL")
     youtube = YouTube(yt_key)
     db_video = Video.get_last_video_published()
-    print(db_video)
     if db_video:
-        pass
+        yt_videos = youtube.get_videos(yt_channel, db_video.published_at)
+        for yt_video in yt_videos:
+            if yt_video['yt_id'] != db_video.yt_id:
+                print("Sin publicar")
+            else:
+                print("Publicado")
+            athread = Thread(target=download, args=(yt_video['yt_id'],))
+            athread.daemon = True
+            athread.start()
+            print(yt_video)
     else:
         yt_videos = youtube.get_videos(yt_channel)
         for yt_video in yt_videos:
-            avideo = Video.new(yt_video['title'],
-                               yt_video['description'],
-                               yt_video['yt_id'],
-                               yt_video['link'],
-                               yt_video['published_at'])
-            avideo.save()
+            Video.new(yt_video['title'],
+                      yt_video['description'],
+                      yt_video['yt_id'],
+                      yt_video['link'],
+                      yt_video['published_at'])
     """
     playlists = youtube.get_playlists(yt_channel)
     for aplaylist in playlists:
@@ -84,20 +92,28 @@ async def update():
 
 
 @app.get("/videos/")
-async def get_videos_for_list(playlist_id=None, published=None):
-    conditions = []
-    if playlist_id or published:
-        if playlist_id:
-            conditions.append(f"playlist_id={playlist_id}")
-        if published:
-            conditions.append(f"published is {published}")
-    return sorted(Video.select(conditions), key=lambda k: k.position)
+async def get_videos():
+    videos = Video.select()
+    return sorted(videos, key=lambda k: k.published_at)
 
 
-@app.post("/videos/")
-async def create_video(yt_id: str = Body(...), playlist_id: str = Body(...),
-                       published: bool = Body(...)):
-    db_video = Video.find_by_yt_id(yt_id)
-    if db_video:
-        return {"result": "KO", "msg": "Already exists"}
-    return Video.new(yt_id, playlist_id, published)
+def download(code):
+    try:
+        origen = "/tmp/origen.mp4"
+        destino = "/tmp/origen.mp4"
+        if os.path.exists(origen):
+            os.remove(origen)
+        if os.path.exists(destino):
+            os.remove(destino)
+        url = f"https://www.youtube.com/watch?v={code}"
+        ydl_opts = {"outtmpl": "/tmp/origen",
+                    "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4",
+                    "retries": 5,
+                    "concurrent-fragments": 5,
+                    "fragment-retries": 5}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+        print("Download finished")
+    except Exception as exception:
+        print(exception)
+        print("Can not download")

@@ -8,8 +8,6 @@ ARG GID=${EB_GID:-1000}
 
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ENV PYTHONIOENCODING=utf-8
-ENV PYTHONUNBUFFERED=1
 
 RUN echo "**** install Python ****" && \
     apk add --update --no-cache --virtual\
@@ -33,6 +31,9 @@ RUN echo "**** install Python dependencies **** " && \
     ${VIRTUAL_ENV}/bin/pip install --no-cache-dir -r /requirements.txt
 
 FROM alpine:3.15
+
+ENV PYTHONIOENCODING=utf-8
+ENV PYTHONUNBUFFERED=1
 
 COPY --from=builder /opt /opt
 COPY --from=builder /etc/group /etc/passwd /etc/shadow /etc/

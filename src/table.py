@@ -136,8 +136,8 @@ class Table:
     def save(self):
         keys = list(self.COLUMNS.keys())
         pk = self.get_pk()
+        keys.remove(pk)
         if self.get(pk):
-            keys.remove(pk)
             set_values = ",".join([f"{key}=?" for key in keys])
             sqlquery = f"UPDATE {self.TABLE} SET {set_values} "\
                        f"WHERE {pk}=?"
@@ -146,6 +146,7 @@ class Table:
             self.__execute(sqlquery, data)
         else:
             set_values = ",".join(keys)
+            print(keys)
             set_data = ("?,"*len(keys))[:-1]
             sqlquery = "INSERT INTO {} ({}) VALUES ({})".format(
                     self.TABLE, set_values, set_data)

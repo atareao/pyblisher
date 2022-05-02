@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env bash
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2022 Lorenzo Carbonell <a.k.a. atareao>
+# Copyright (c) 2021 Lorenzo Carbonell <a.k.a. atareao>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,31 +21,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import unittest
-import sys
-import os
-sys.path.append(os.path.join("../src"))
-from table import Table
-from video import Video
-
-Table.DATABASE = 'test.db'
-
-
-class TestVideo(unittest.TestCase):
-    def setUp(self):
-        if os.path.exists(Table.DATABASE):
-            os.remove(Table.DATABASE)
-        Video.inicializate()
-
-    def tearDown(self):
-        if os.path.exists(Table.DATABASE):
-            os.remove(Table.DATABASE)
-
-    def test_create(self):
-        avideo = Video.new("titulo", "description", "yt_id", "link", "fecha")
-        tvideo = Video.get_by_id(avideo.id)
-        self.assertEqual(avideo, tvideo)
-
-
-if __name__ == '__main__':
-    unittest.main()
+source /opt/venv/bin/activate
+gunicorn main:app -k uvicorn.workers.UvicornWorker \
+                               -w 1 \
+                               --chdir /app/src \
+                               --threads 1 \
+                               --access-logfile - \
+                               -b 0.0.0.0:8000
