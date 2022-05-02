@@ -1,11 +1,12 @@
 version: '3'
 
 services:
-  yt2fd:
+  pyblisher:
     build: .
-    image: atareao/yt2fd:v2.0
+    image: atareao/pyblisher:v1.0
     env_file:
       - ./.env
+    ports:
+      - 8000:8000
     volumes:
-      - ./.toml:/app/conf/.toml
-      - ./ytids:/app/conf/ytids
+      - ./database.db:/app/database/database.db

@@ -161,3 +161,4 @@ pyvenv.cfg
 share/
 include/
 load.sql
+database.db

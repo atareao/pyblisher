@@ -23,32 +23,31 @@
 
 from table import Table
 
+
 class Video(Table):
     TABLE = 'VIDEOS'
     UNIKEYS = ['yt_id']
     CREATE_TABLE_QUERY = (f"CREATE TABLE IF NOT EXISTS {TABLE}("
                           "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-                          "PLAYLIST_ID INTEGER,"
                           "TITLE TEXT,"
                           "DESCRIPTION TEXT,"
                           "YT_ID TEXT,"
-                          "POSITION INTEGER,"
-                          "DOWNLOAD_LINK TEXT,"
                           "LINK TEXT,"
-                          "PUBLISHED BOOLEAN)")
+                          "PUBLISHED_AT TEXT)")
 
     @classmethod
-    def get_first_video_not_published(cls, list_id, asc=True):
-        condition = f"list_id='{list_id} ORDER BY ID "
-        condition += "ASC" if asc is True else "DESC"
+    def get_last_video_published(cls):
+        condition = "published_at IS NOT NULL ORDER BY published_at DESC"
         items = cls.select(condition)
         return items[0] if len(items) > 0 else None
 
-
     @classmethod
-    def new(cls, yt_id, list_id, published):
-        video = Video.from_dict({"yt_id": yt_id, "list_id": list_id,
-            "published": published})
+    def new(cls, title, description, yt_id, link, published_at):
+        video = Video.from_dict({"title": title,
+                                 "description": description,
+                                 "yt_id": yt_id,
+                                 "link": link,
+                                 "published_at": published_at})
         video.save()
         return video
 
@@ -58,6 +57,3 @@ class Video(Table):
         if items:
             return items[0]
         return None
-
-
-

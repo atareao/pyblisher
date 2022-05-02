@@ -1,1 +1,8 @@
-.mypy_cache/
+./Dockerfile
+./.git/
+./bin/
+./include/
+./lib/
+./lib64/
+./share/
+./test/

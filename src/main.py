@@ -24,11 +24,9 @@
 
 import os
 from dotenv import load_dotenv
-from datetime import date, datetime
-from fastapi import FastAPI, Body, Path
+from datetime import datetime
+from fastapi import FastAPI, Body
 from video import Video
-from playlist import Playlist
-from schedule import Schedule
 from table import Table
 from utils import Log
 from ytapi import YouTube
@@ -39,21 +37,33 @@ Log.LEVEL = Log.DEBUG
 
 load_dotenv()
 Video.inicializate()
-Playlist.inicializate()
-Schedule.inicializate()
 app = FastAPI()
 
 
+@app.get("/status/")
+async def status():
+    return {"status": "OK", "message": "Up and running"}
 
-@app.get("/schedule/")
-async def get_schedule():
-    return Schedule.get_all()
 
 @app.get("/update/")
 async def update():
     yt_key = os.getenv("YT_KEY")
     yt_channel = os.getenv("YT_CHANNEL")
     youtube = YouTube(yt_key)
+    db_video = Video.get_last_video_published()
+    print(db_video)
+    if db_video:
+        pass
+    else:
+        yt_videos = youtube.get_videos(yt_channel)
+        for yt_video in yt_videos:
+            avideo = Video.new(yt_video['title'],
+                               yt_video['description'],
+                               yt_video['yt_id'],
+                               yt_video['link'],
+                               yt_video['published_at'])
+            avideo.save()
+    """
     playlists = youtube.get_playlists(yt_channel)
     for aplaylist in playlists:
         db_playlist = Playlist.find_by_yt_id(aplaylist['yt_id'])
@@ -69,20 +79,8 @@ async def update():
             if not db_video:
                 db_video = Video.from_dict(avideo)
                 db_video.save()
+    """
     return {"status": "OK", "message": "Update completed"}
-
-
-@app.get("/votd/")
-async def get_votd():
-    videos = []
-    weekday = datetime.today().weekday()
-    condition = f"day = {weekday} AND publish is TRUE"
-    schedules = Schedule.select(condition)
-    for schedule in schedules:
-        condition = f"list_id={schedule.list_id} AND published is FALSE"
-        some_videos = Video.select(condition)
-        videos.extend(some_videos)
-    return videos
 
 
 @app.get("/videos/")
@@ -95,23 +93,11 @@ async def get_videos_for_list(playlist_id=None, published=None):
             conditions.append(f"published is {published}")
     return sorted(Video.select(conditions), key=lambda k: k.position)
 
+
 @app.post("/videos/")
 async def create_video(yt_id: str = Body(...), playlist_id: str = Body(...),
-        published: bool = Body(...)):
+                       published: bool = Body(...)):
     db_video = Video.find_by_yt_id(yt_id)
     if db_video:
         return {"result": "KO", "msg": "Already exists"}
     return Video.new(yt_id, playlist_id, published)
-
-@app.get("/playlists/")
-async def get_playlists():
-    return Playlist.get_all()
-
-@app.post("/listas/")
-async def create_playlist(yt_id: str = Body(...), title: str = Body(...),
-        reverse: bool = Body(...)):
-    db_lista = Playlist.find_by_yt_id(yt_id)
-    if db_lista:
-        return {"result": "KO", "msg": "Already exists"}
-    return Playlist.new(yt_id, title, reverse)
-

@@ -33,7 +33,66 @@ class YouTube:
     def __init__(self, key):
         self.__key = key
 
-    def get_videos(self, playlist_id, next_token=None, reverse_list=False):
+    def get_videos(self, channel_id, published_after=None, next_token=None):
+        videos = []
+        url = f"{URL}/search"
+        params = {"part": "snippet",
+                  "channelId": channel_id,
+                  "maxResults": 50,
+                  "order": "date",
+                  "type": "video",
+                  "key": self.__key}
+        if published_after:
+            params['publishedAfter'] = published_after
+        if next_token:
+            params["pageToken"] = next_token
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            for item in data['items']:
+                if item['snippet']['title'].lower() == 'private video' or \
+                        item['snippet']['title'].lower() == 'deleted video':
+                    continue
+                print(item)
+                video_id = item['id']['videoId']
+                link = f"{YTURL}/watch?v={video_id}"
+                video = {"title": item['snippet']['title'],
+                         "description": item['snippet']['description'],
+                         "yt_id": video_id,
+                         "link": link,
+                         "published_at": item['snippet']['publishedAt']}
+                videos.append(video)
+            if 'nextPageToken' in data and data['nextPageToken']:
+                more_videos = self.get_videos(channel_id,
+                                              published_after,
+                                              data['nextPageToken'])
+                videos += more_videos
+        else:
+            Log.error(response.status_code)
+            Log.error(response.text)
+        return videos
+
+    def get_channels(self, for_user_name, next_token=None):
+        channels = []
+        url = f"{URL}/channels"
+        params = {"part": "snippet",
+                  "forUsername": for_user_name,
+                  "maxResults": 50,
+                  "key": self.__key}
+        if next_token:
+            params["pageToken"] = next_token
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            print(data)
+        else:
+            Log.error(response.status_code)
+            Log.error(response.text)
+        return channels
+
+
+    def get_videos_from_list(self, playlist_id, next_token=None,
+                             reverse_list=False):
         videos = []
         url = (f"{URL}/playlistItems?part=snippet&maxResults=50"
                f"&playlistId={playlist_id}&key={self.__key}")
@@ -60,17 +119,17 @@ class YouTube:
                 Log.debug(video)
                 videos.append(video)
             if 'nextPageToken' in data and data['nextPageToken']:
-                more_videos = self.get_videos(playlist_id,
-                        data['nextPageToken'], reverse_list)
+                more_videos = self.get_videos_from_list(playlist_id,
+                                                        data['nextPageToken'],
+                                                        reverse_list)
                 videos += more_videos
         else:
             Log.error(response.status_code)
             Log.error(response.text)
         Log.info(f"Reverse: {reverse_list}")
         videos = sorted(videos, key=lambda k: k['position'],
-                reverse=reverse_list)
+                        reverse=reverse_list)
         return videos
-
 
     def get_playlists(self, channel_id, next_token=None):
         playlists = []
@@ -89,9 +148,21 @@ class YouTube:
                 playlists.append(playlist)
             if 'nextPageToken' in data and data['nextPageToken']:
                 more_playlists = self.get_playlists(channel_id,
-                        data['nextPageToken'])
+                                                    data['nextPageToken'])
                 playlists += more_playlists
         else:
             Log.error(response.status_code)
             Log.error(response.text)
         return playlists
+
+
+if __name__ == "__main__":
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+    yt_key = os.getenv('YT_KEY')
+    channel_id = os.getenv('YT_CHANNEL')
+    youtube = YouTube(yt_key)
+    videos = youtube.get_videos(channel_id)
+    print(videos)
+

@@ -163,7 +163,6 @@ class Table:
             return len(items) > 0
         raise NoUnikeys
 
-
     @classmethod
     def get_by_id(cls, id):
         pk = cls.get_pk()
@@ -178,10 +177,9 @@ class Table:
     @classmethod
     def get_pk(cls):
         for key, value in cls.COLUMNS.items():
-            if value['pk'] == True:
+            if value['pk'] is True:
                 return key
         return None
-
 
     @classmethod
     def select(cls, condition=None):
