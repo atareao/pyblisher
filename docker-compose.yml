@@ -1,6 +1,14 @@
 version: '3'
 
 services:
+  croni:
+    image: atareao/croni:v1.1
+    restart: unless-stopped
+    networks:
+      - internal
+    volumes:
+      - ./crontab:/crontab
+
   pyblisher:
     build: .
     image: atareao/pyblisher:v1.0
@@ -10,3 +18,9 @@ services:
       - 8000:8000
     volumes:
       - ./database.db:/app/database.db
+      - ./mastodon_user.secret:/mastodon_user.secret
+    networks:
+      - internal
+
+networks:
+  internal: {}

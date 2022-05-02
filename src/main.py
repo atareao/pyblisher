@@ -23,6 +23,7 @@
 
 
 import os
+import requests
 import yt_dlp
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -31,6 +32,10 @@ from table import Table
 from utils import Log
 from ytapi import YouTube
 from threading import Thread
+from plumbum import local
+from requests_oauthlib import OAuth1
+from aupload import VideoTweet
+from mastodon import Mastodon
 
 
 Table.DATABASE = "/app/database.db"
@@ -57,12 +62,12 @@ async def update():
         for yt_video in yt_videos:
             if yt_video['yt_id'] != db_video.yt_id:
                 print("Sin publicar")
+                athread = Thread(target=populate, args=(yt_video,))
+                athread.daemon = True
+                athread.start()
+                break
             else:
                 print("Publicado")
-            athread = Thread(target=download, args=(yt_video['yt_id'],))
-            athread.daemon = True
-            athread.start()
-            print(yt_video)
     else:
         yt_videos = youtube.get_videos(yt_channel)
         for yt_video in yt_videos:
@@ -71,23 +76,6 @@ async def update():
                       yt_video['yt_id'],
                       yt_video['link'],
                       yt_video['published_at'])
-    """
-    playlists = youtube.get_playlists(yt_channel)
-    for aplaylist in playlists:
-        db_playlist = Playlist.find_by_yt_id(aplaylist['yt_id'])
-        if not db_playlist:
-            db_playlist = Playlist.from_dict(aplaylist)
-            db_playlist.save()
-        reverse_list = (db_playlist.reverse == 1)
-        videos = youtube.get_videos(aplaylist['yt_id'],
-                reverse_list=reverse_list)
-        for avideo in videos:
-            db_video = Video.find_by_yt_id(avideo['yt_id'])
-            avideo['playlist_id'] = db_playlist.id
-            if not db_video:
-                db_video = Video.from_dict(avideo)
-                db_video.save()
-    """
     return {"status": "OK", "message": "Update completed"}
 
 
@@ -97,23 +85,112 @@ async def get_videos():
     return sorted(videos, key=lambda k: k.published_at)
 
 
-def download(code):
+def populate(yt_video):
+    origen = "/tmp/origen.mp4"
+    destino = "/tmp/destino.mp4"
+    clean(origen, destino)
     try:
-        origen = "/tmp/origen.mp4"
-        destino = "/tmp/origen.mp4"
-        if os.path.exists(origen):
-            os.remove(origen)
-        if os.path.exists(destino):
-            os.remove(destino)
-        url = f"https://www.youtube.com/watch?v={code}"
+        yt_id = yt_video["yt_id"]
+        title = yt_video['title']
+        link = yt_video['link']
+        message = title + '\n\n'
+        largo = 270 - len(message) - len(link)
+        message += yt_video['description'][0:largo] + '...\n\n' + link
+        message_discord = "**" + title + "**\n"
+        message_discord += yt_video["description"] + "\n" + link
+        url = f"https://www.youtube.com/watch?v={yt_id}"
         ydl_opts = {"outtmpl": "/tmp/origen",
                     "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4",
                     "retries": 5,
                     "concurrent-fragments": 5,
                     "fragment-retries": 5}
+        print("Start download")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-        print("Download finished")
+        print("End download")
+        convert(origen, destino)
+        #tweet(message, destino)
+        # print("Start save YouTube video")
+        # Video.new(yt_video['title'],
+        #           yt_video['description'],
+        #           yt_video['yt_id'],
+        #           yt_video['link'],
+        #           yt_video['published_at'])
+        # print("End save YouTube video")
+        # telegramea(message, destino)
+        # discordea(message_discord)
+        toot(message, destino)
+        clean(origen, destino)
     except Exception as exception:
         print(exception)
         print("Can not download")
+
+
+def convert(origen, destino):
+    print("Start cutting")
+    ffmpeg = local['ffmpeg']
+    ffmpeg["-y", "-ss", "0", "-i", origen, "-to", "30", destino]()
+    print("End cutting")
+
+
+def tweet(message, filename):
+    print("Start tweeting")
+    consumer_key = os.getenv("TW_CONSUMER_KEY")
+    consumer_secret = os.getenv("TW_CONSUMER_SECRET")
+    access_token = os.getenv("TW_ACCESS_TOKEN")
+    access_token_secret = os.getenv("TW_ACCESS_TOKEN_SECRET")
+    oauth = OAuth1(consumer_key, client_secret=consumer_secret,
+                   resource_owner_key=access_token,
+                   resource_owner_secret=access_token_secret)
+    video_tweet = VideoTweet(oauth, message, filename)
+    video_tweet.upload_init()
+    video_tweet.upload_append()
+    video_tweet.upload_finalize()
+    video_tweet.tweet()
+    print("End tweeting")
+
+
+def toot(message, filename):
+    print("Start message in Mastodon")
+    access_token = os.getenv("MASTODON_ACCESS_TOKEN")
+    print(access_token)
+    base_url = os.getenv("MASTODON_BASE_URL")
+    print(base_url)
+    mastodon_client = Mastodon('/mastodon_user.secret',
+                               'https://mastodon.social')
+    print(str(mastodon_client))
+    ans1 = mastodon_client.status_post("Status")
+    print(str(ans1))
+    ans = mastodon_client.media_post(filename, 'video/mp4')
+    print("Salida:")
+    print(str(ans))
+    mastodon_client.status_post(message, media_ids=ans['id'])
+    print("End message in Mastodon")
+
+
+def discordea(message):
+    print("Start message in Discord")
+    channel = os.getenv("DISCORD_CHANNEL")
+    token = os.getenv("DISCORD_TOKEN")
+    url = f"https://discord.com/api/webhooks/{channel}/{token}"
+    data = {"content": message}
+    requests.post(url, data)
+    print("End message in Discord")
+
+
+def telegramea(message, filename):
+    print("Start message in Telegram")
+    chat_id = os.getenv("TELEGRAM_CHANNEL")
+    token = os.getenv("TELEGRAM_TOKEN")
+    data = {"chat_id": chat_id, "caption": message}
+    url = f"https://api.telegram.org/bot{token}/sendVideo"
+    with open(filename, "rb") as fr:
+        requests.post(url, data=data, files={"video": fr})
+    print("End message in Telegram")
+
+
+def clean(origen, destino):
+    if os.path.exists(origen):
+        os.remove(origen)
+    if os.path.exists(destino):
+        os.remove(destino)
