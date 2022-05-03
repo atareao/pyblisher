@@ -109,21 +109,21 @@ def populate(yt_video):
             ydl.download([url])
         print("End download")
         convert(origen, destino)
-        #tweet(message, destino)
-        # print("Start save YouTube video")
-        # Video.new(yt_video['title'],
-        #           yt_video['description'],
-        #           yt_video['yt_id'],
-        #           yt_video['link'],
-        #           yt_video['published_at'])
-        # print("End save YouTube video")
-        # telegramea(message, destino)
-        # discordea(message_discord)
+        tweet(message, destino)
+        print("Start save YouTube video")
+        Video.new(yt_video['title'],
+                  yt_video['description'],
+                  yt_video['yt_id'],
+                  yt_video['link'],
+                  yt_video['published_at'])
+        print("End save YouTube video")
+        telegramea(message, destino)
+        discordea(message_discord)
         toot(message, destino)
-        clean(origen, destino)
     except Exception as exception:
         print(exception)
         print("Can not download")
+    clean(origen, destino)
 
 
 def convert(origen, destino):
