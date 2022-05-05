@@ -32,6 +32,7 @@ class YouTube:
 
     def __init__(self, key):
         self.__key = key
+        print(f"Key: {key}")
 
     def get_videos(self, channel_id, published_after=None, next_token=None):
         videos = []
@@ -89,7 +90,6 @@ class YouTube:
             Log.error(response.status_code)
             Log.error(response.text)
         return channels
-
 
     def get_videos_from_list(self, playlist_id, next_token=None,
                              reverse_list=False):
@@ -165,4 +165,3 @@ if __name__ == "__main__":
     youtube = YouTube(yt_key)
     videos = youtube.get_videos(channel_id)
     print(videos)
-

@@ -101,9 +101,7 @@ def populate(yt_video):
         url = f"https://www.youtube.com/watch?v={yt_id}"
         ydl_opts = {"outtmpl": "/tmp/origen",
                     "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4",
-                    "retries": 5,
-                    "concurrent-fragments": 5,
-                    "fragment-retries": 5}
+                    "retries": 5}
         print("Start download")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
