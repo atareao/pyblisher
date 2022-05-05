@@ -127,7 +127,8 @@ def populate(yt_video):
 def convert(origen, destino):
     print("Start cutting")
     ffmpeg = local['ffmpeg']
-    ffmpeg["-y", "-ss", "0", "-i", origen, "-to", "30", destino]()
+    ffmpeg["-y", "-ss", "0", "-to", "45", "-i", origen, "-c", "copy",
+           destino]()
     print("End cutting")
 
 
