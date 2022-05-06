@@ -35,7 +35,7 @@ from threading import Thread
 from plumbum import local
 from requests_oauthlib import OAuth1
 from aupload import VideoTweet
-from mastodon import Mastodon
+from mastodonapi import MastodonClient
 
 
 Table.DATABASE = "/app/database.db"
@@ -89,38 +89,42 @@ def populate(yt_video):
     origen = "/tmp/origen.mp4"
     destino = "/tmp/destino.mp4"
     clean(origen, destino)
-    try:
-        yt_id = yt_video["yt_id"]
-        title = yt_video['title']
-        link = yt_video['link']
-        message = title + '\n\n'
-        largo = 270 - len(message) - len(link)
-        message += yt_video['description'][0:largo] + '...\n\n' + link
-        message_discord = "**" + title + "**\n"
-        message_discord += yt_video["description"] + "\n" + link
-        url = f"https://www.youtube.com/watch?v={yt_id}"
-        ydl_opts = {"outtmpl": "/tmp/origen",
-                    "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4",
-                    "retries": 5}
-        print("Start download")
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-        print("End download")
-        convert(origen, destino)
-        tweet(message, destino)
-        print("Start save YouTube video")
-        Video.new(yt_video['title'],
-                  yt_video['description'],
-                  yt_video['yt_id'],
-                  yt_video['link'],
-                  yt_video['published_at'])
-        print("End save YouTube video")
-        telegramea(message, destino)
-        discordea(message_discord)
-        toot(message, destino)
-    except Exception as exception:
-        print(exception)
-        print("Can not download")
+    tries = 3
+    while tries > 0:
+        try:
+            yt_id = yt_video["yt_id"]
+            title = yt_video['title']
+            link = yt_video['link']
+            message = title + '\n\n'
+            largo = 270 - len(message) - len(link)
+            message += yt_video['description'][0:largo] + '...\n\n' + link
+            message_discord = "**" + title + "**\n"
+            message_discord += yt_video["description"] + "\n" + link
+            url = f"https://www.youtube.com/watch?v={yt_id}"
+            ydl_opts = {"outtmpl": "/tmp/origen",
+                        "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4",
+                        "retries": 5}
+            print("Start download")
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+            print("End download")
+            convert(origen, destino)
+            tweet(message, destino)
+            print("Start save YouTube video")
+            Video.new(yt_video['title'],
+                      yt_video['description'],
+                      yt_video['yt_id'],
+                      yt_video['link'],
+                      yt_video['published_at'])
+            print("End save YouTube video")
+            tries = 0
+            telegramea(message, destino)
+            discordea(message_discord)
+            toot(message, destino)
+        except Exception as exception:
+            print(exception)
+            print(f"Can not download. Try number: {tries}")
+            tries -= 1
     clean(origen, destino)
 
 
@@ -151,19 +155,10 @@ def tweet(message, filename):
 
 def toot(message, filename):
     print("Start message in Mastodon")
+    base_uri = os.getenv("MASTODON_BASE_URI")
     access_token = os.getenv("MASTODON_ACCESS_TOKEN")
-    print(access_token)
-    base_url = os.getenv("MASTODON_BASE_URL")
-    print(base_url)
-    mastodon_client = Mastodon('/mastodon_user.secret',
-                               'https://mastodon.social')
-    print(str(mastodon_client))
-    ans1 = mastodon_client.status_post("Status")
-    print(str(ans1))
-    ans = mastodon_client.media_post(filename, 'video/mp4')
-    print("Salida:")
-    print(str(ans))
-    mastodon_client.status_post(message, media_ids=ans['id'])
+    mastodon_client = MastodonClient(base_uri, access_token)
+    mastodon_client.toot_with_media(message, filename)
     print("End message in Mastodon")
 
 
