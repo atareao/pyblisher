@@ -162,3 +162,4 @@ share/
 include/
 load.sql
 database.db
+peertube.toml

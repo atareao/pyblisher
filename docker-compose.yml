@@ -14,11 +14,9 @@ services:
     image: atareao/pyblisher:v1.0
     env_file:
       - ./.env
-    ports:
-      - 8000:8000
     volumes:
       - ./database.db:/app/database.db
-      - ./mastodon_user.secret:/mastodon_user.secret
+      - ./peertube.toml:/app/peertube.toml
     networks:
       - internal
 
