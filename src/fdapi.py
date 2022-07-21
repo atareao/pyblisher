@@ -110,7 +110,7 @@ class PeerTube:
                 }
         print(data)
         filename = os.path.basename(filepath)
-        mimetype = mimetypes.guess_type(filepath)
+        mimetype = mimetypes.guess_type(filepath)[0]
         print(f"Going to upload {filepath} with mimetype {mimetype}")
         with open(filepath, 'rb') as file_reader:
             files = {"videofile": (filename, file_reader, mimetype)}
