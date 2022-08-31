@@ -15,7 +15,7 @@ RUN echo "**** install Python ****" && \
             gcc \
             musl-dev \
             python3-dev \
-            python3==3.9.7-r4 && \
+            python3==3.9.13-r1 && \
     rm -rf /var/lib/apt/lists/* && \
     echo "**** create user ****" && \
     addgroup dockerus && \
@@ -41,9 +41,9 @@ COPY --from=builder /etc/group /etc/passwd /etc/shadow /etc/
 RUN echo "**** install Python ****" && \
     apk add --update --no-cache \
             tini==0.19.0-r0 \
-            tzdata==2022a-r0 \
+            tzdata==2022c-r0 \
             ffmpeg==4.4.1-r2 \
-            python3==3.9.7-r4 && \
+            python3==3.9.13-r1 && \
     mkdir -p /app/tmp && \
     mkdir -p /app/conf && \
     chown -R dockerus:dockerus /opt && \
