@@ -1,9 +1,12 @@
-version: '3'
+version: '3.7'
 
 services:
   croni:
     image: atareao/croni:v1.1
+    init: true
     restart: unless-stopped
+    depends_on:
+      - pyblisher
     networks:
       - internal
     volumes:
@@ -11,7 +14,8 @@ services:
 
   pyblisher:
     build: .
-    image: atareao/pyblisher:v1.0
+    image: atareao/pyblisher:v1.3
+    init: true
     env_file:
       - ./.env
     volumes:
