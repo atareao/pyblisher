@@ -109,11 +109,11 @@ def populate(yt_video):
     message += yt_video['description'][0:largo] + '...\n\n' + link
     message_discord = "**" + title + "**\n"
     message_discord += yt_video["description"] + "\n" + link
-    message_mastodon = f"{title}\n\n{description}"
-    max_length = 495 - len(link)
+    message_mastodon = f"{title}\n{description}"
+    max_length = 479 - len(link)
     if len(message_mastodon) > max_length:
         message_mastodon = message_mastodon[:max_length]
-    message_mastodon = f"{message_mastodon}\n\n{link}"
+    message_mastodon = f"{message_mastodon}\n#atareaoConLinux\n{link}"
 
     try:
         download(yt_id)
@@ -137,6 +137,10 @@ def populate(yt_video):
         return
     try:
         telegramea(message, destino)
+    except Exception as exception:
+        logger.error(exception)
+    try:
+        telegramea_al_grupo(message, destino)
     except Exception as exception:
         logger.error(exception)
     try:
@@ -225,6 +229,23 @@ def telegramea(message, filename):
         requests.post(url, data=data, files={"video": fr})
     logger.info("End message in Telegram")
 
+@retry(tries=3, delay=5, logger=logger)
+def telegramea_al_grupo(message, filename):
+    logger.info("Start message in Telegram to the group")
+    group = os.getenv("TELEGRAM_GROUP")
+    token = os.getenv("TELEGRAM_TOKEN")
+    if group is not None and group.find(","):
+        group_id, theme_id = group.split(",")
+        data = {"chat_id": group_id, 
+                "caption": message,
+                "message_thread_id": theme_id}
+    else:
+        data = {"chat_id": group, 
+                "caption": message}
+    url = f"https://api.telegram.org/bot{token}/sendVideo"
+    with open(filename, "rb") as fr:
+        requests.post(url, data=data, files={"video": fr})
+    logger.info("End message in Telegram")
 
 @retry(tries=3, delay=60, logger=logger)
 def export2PeerTube(title, description, filename):
