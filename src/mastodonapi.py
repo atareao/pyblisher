@@ -72,6 +72,26 @@ class MastodonClient:
             print(exception)
         return None
 
+    def upload_media2(self, filename, description=None, thumbnail=None):
+        print("upload_media2")
+        url = f"{self.__base_uri}/api/v2/media"
+        try:
+            data = {"file": open(filename, "rb"),
+                    "focus": "center"}
+            if description:
+                data["description"] = description
+            if thumbnail:
+                data["thumbnail"] = open(thumbnail, "rb")
+            response = requests.post(url, headers=self.__headers, files=data)
+            if response.status_code == 202:
+                return response.json()
+            message = f"HTTP Code: {response.status_code}. {response.text}"
+            raise Exception(message)
+        except Exception as exception:
+            print(exception)
+        return None
+
+
     def get_media_info(self, id):
         print("get_media_info")
         url = f"{self.__base_uri}/api/v1/media/{id}"
