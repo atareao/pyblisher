@@ -72,16 +72,14 @@ class MastodonClient:
             print(exception)
         return None
 
-    def upload_media2(self, filename, description=None, thumbnail=None):
+    def upload_media2(self, filename, description, thumbnail):
         print("upload_media2")
         url = f"{self.__base_uri}/api/v2/media"
         try:
-            data = {"file": open(filename, "rb"),
-                    "focus": "center"}
-            if description:
-                data["description"] = description
-            if thumbnail:
-                data["thumbnail"] = open(thumbnail, "rb")
+            data = {"file": ("video.mp4", open(filename, "rb"), 'video/mp4'),
+                    "description": description,
+                    "thumbnail": ('thumbnail.jpg', open(thumbnail, "rb"), 'image/jpeg')
+                    }
             response = requests.post(url, headers=self.__headers, files=data)
             if response.status_code == 202:
                 return response.json()
@@ -90,7 +88,6 @@ class MastodonClient:
         except Exception as exception:
             print(exception)
         return None
-
 
     def get_media_info(self, id):
         print("get_media_info")
@@ -121,6 +118,21 @@ class MastodonClient:
                     return None
             return self.toot(status, [id])
 
+    def toot_with_media2(self, status, filename, description=None, thumbnail=None):
+        response = self.upload_media2(filename, description, thumbnail)
+        if response and "blurhash" in response and response["blurhash"]:
+            id = response['id']
+            info = None
+            tries = 0
+            while info is None:
+                info = self.get_media_info(id)
+                sleep(30)
+                tries += 1
+                print(f"Try n {tries}")
+                if tries > 10:
+                    return None
+            return self.toot(status, [id])
+
 
 def main():
     import os
@@ -129,14 +141,16 @@ def main():
     base_uri = os.getenv("MASTODON_BASE_URI")
     access_token = os.getenv("MASTODON_ACCESS_TOKEN")
     mastodon_client = MastodonClient(base_uri, access_token)
-    msg = "Nueva versión de Ubuntu"
+    msg = "Gopass. Tus contraseñas seguras en Linux"
+    filename = "/home/lorenzo/sandbox/output.mp4"
+    thumbnail = "/home/lorenzo/sandbox/thumbnail.jpg"
+    mastodon_client.toot_with_media2(msg, filename, description=msg, thumbnail=thumbnail)
     # mastodon_client.toot(msg, ["108255940858273411"])
-    filename = "/home/lorenzo/kk/ubuntu.mp4"
     # salida = mastodon_client.upload_media(filename)
     # print(salida)
     # mastodon_client.toot_with_media(msg, filename)
     # print(mastodon_client.get_media_info("108255983701968389"))
-    mastodon_client.toot_with_media(msg, filename)
+    # mastodon_client.toot_with_media(msg, filename)
 
 
 if __name__ == "__main__":
