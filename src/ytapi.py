@@ -59,6 +59,7 @@ class YouTube:
                 link = f"{YTURL}/watch?v={video_id}"
                 video = {"title": item['snippet']['title'],
                          "description": item['snippet']['description'],
+                         "thumbnail": item['snippet']['thumbnails']['high']['url'],
                          "yt_id": video_id,
                          "link": link,
                          "published_at": item['snippet']['publishedAt']}
@@ -111,6 +112,7 @@ class YouTube:
                 download_link = f"{YTURL}/watch?v={video_id}"
                 video = {"title": item['snippet']['title'],
                          "description": item['snippet']['description'],
+                         "thumbnail": item['snippet']['thumbnails']['high']['url'],
                          "yt_id": video_id,
                          "position": item['snippet']['position'],
                          "download_link": download_link,
