@@ -27,6 +27,7 @@ import sys
 import logging
 import requests
 import yt_dlp
+from PIL import Image
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from video import Video
@@ -99,7 +100,8 @@ async def get_videos():
 def populate(yt_video):
     origen = "/tmp/origen.mp4"
     destino = "/tmp/destino.mp4"
-    clean(origen, destino)
+    thumbnail_file = "/tmp/thumbnail.jpg"
+    clean(origen, destino, thumbnail_file)
     yt_id = yt_video["yt_id"]
     title = yt_video['title']
     description = yt_video["description"]
@@ -117,6 +119,7 @@ def populate(yt_video):
 
     try:
         download(yt_id)
+        download_thumbnail(yt_id)
     except Exception as exception:
         logger.error(exception)
         logger.info("Can not continue")
@@ -148,14 +151,14 @@ def populate(yt_video):
     except Exception as exception:
         logger.error(exception)
     try:
-        toot(message_mastodon, destino)
+        toot(message_mastodon, destino, title, thumbnail_file)
     except Exception as exception:
         logger.error(exception)
     try:
         export2PeerTube(title, description, origen)
     except Exception as exception:
         logger.error(exception)
-    clean(origen, destino)
+    clean(origen, destino, thumbnail_file)
 
 
 @retry(tries=3, delay=30, logger=logger)
@@ -169,6 +172,28 @@ def download(yt_id):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
     logger.info("End download")
+
+
+@retry(tries=3, delay=30, logger=logger)
+def download_thumbnail(yt_id):
+    logger.info("Start download thumbnail")
+    tmpl = "/tmp/thumbnail"
+    src = f"{tmpl}.webp"
+    dst = f"{tmpl}.jpg"
+    url = f"https://www.youtube.com/watch?v={yt_id}"
+    ydl_opts = {"outtmpl": tmpl,
+                "writethumbnail": True,
+                "skip_download": True,
+                "retries": 5}
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+    if os.path.exists(src):
+        logger.info("Start convert from webp to jpg")
+        image = Image.open(src)
+        image.save(dst)
+        os.remove(src)
+        logger.info("End convert from webp to jpg")
+    logger.info("End download thumbail")
 
 
 def convert(origen, destino):
@@ -198,12 +223,12 @@ def tweet(message, filename):
 
 
 @retry(tries=3, delay=5, logger=logger)
-def toot(message, filename):
+def toot(message, filename, description, thumbnail):
     logger.info("Start message in Mastodon")
     base_uri = os.getenv("MASTODON_BASE_URI")
     access_token = os.getenv("MASTODON_ACCESS_TOKEN")
     mastodon_client = MastodonClient(base_uri, access_token)
-    mastodon_client.toot_with_media(message, filename)
+    mastodon_client.toot_with_media2(message, filename, description, thumbnail)
     logger.info("End message in Mastodon")
 
 
@@ -258,8 +283,14 @@ def export2PeerTube(title, description, filename):
     logger.info("End export to PeerTube")
 
 
-def clean(origen, destino):
+def clean(origen, destino, thumbnail_file):
     if os.path.exists(origen):
         os.remove(origen)
     if os.path.exists(destino):
         os.remove(destino)
+    if os.path.exists(thumbnail_file):
+        os.remove(thumbnail_file)
+
+if __name__ == "__main__":
+    yt_id = "ZZzJhyQHN70"
+    download_thumbnail(yt_id)
