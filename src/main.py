@@ -254,6 +254,7 @@ def telegramea(message, filename):
         requests.post(url, data=data, files={"video": fr})
     logger.info("End message in Telegram")
 
+
 @retry(tries=3, delay=5, logger=logger)
 def telegramea_al_grupo(message, filename):
     logger.info("Start message in Telegram to the group")
@@ -261,16 +262,17 @@ def telegramea_al_grupo(message, filename):
     token = os.getenv("TELEGRAM_TOKEN")
     if group is not None and group.find(","):
         group_id, theme_id = group.split(",")
-        data = {"chat_id": group_id, 
+        data = {"chat_id": group_id,
                 "caption": message,
                 "message_thread_id": theme_id}
     else:
-        data = {"chat_id": group, 
+        data = {"chat_id": group,
                 "caption": message}
     url = f"https://api.telegram.org/bot{token}/sendVideo"
     with open(filename, "rb") as fr:
         requests.post(url, data=data, files={"video": fr})
     logger.info("End message in Telegram")
+
 
 @retry(tries=3, delay=60, logger=logger)
 def export2PeerTube(title, description, filename):
@@ -290,6 +292,7 @@ def clean(origen, destino, thumbnail_file):
         os.remove(destino)
     if os.path.exists(thumbnail_file):
         os.remove(thumbnail_file)
+
 
 if __name__ == "__main__":
     yt_id = "ZZzJhyQHN70"

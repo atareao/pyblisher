@@ -78,7 +78,8 @@ class MastodonClient:
         try:
             data = {"file": ("video.mp4", open(filename, "rb"), 'video/mp4'),
                     "description": description,
-                    "thumbnail": ('thumbnail.jpg', open(thumbnail, "rb"), 'image/jpeg')
+                    "thumbnail": ('thumbnail.jpg', open(thumbnail, "rb"),
+                                  'image/jpeg')
                     }
             response = requests.post(url, headers=self.__headers, files=data)
             if response.status_code == 202:
@@ -118,7 +119,8 @@ class MastodonClient:
                     return None
             return self.toot(status, [id])
 
-    def toot_with_media2(self, status, filename, description=None, thumbnail=None):
+    def toot_with_media2(self, status, filename, description=None,
+                         thumbnail=None):
         response = self.upload_media2(filename, description, thumbnail)
         if response and "blurhash" in response and response["blurhash"]:
             id = response['id']
@@ -144,7 +146,8 @@ def main():
     msg = "Gopass. Tus contraseñas seguras en Linux"
     filename = "/home/lorenzo/sandbox/output.mp4"
     thumbnail = "/home/lorenzo/sandbox/thumbnail.jpg"
-    mastodon_client.toot_with_media2(msg, filename, description=msg, thumbnail=thumbnail)
+    mastodon_client.toot_with_media2(msg, filename, description=msg,
+                                     thumbnail=thumbnail)
     # mastodon_client.toot(msg, ["108255940858273411"])
     # salida = mastodon_client.upload_media(filename)
     # print(salida)
