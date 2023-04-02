@@ -20,26 +20,38 @@ RUN echo "**** install Python dependencies **** " && \
     ${VIRTUAL_ENV}/bin/pip install --upgrade pip && \
     ${VIRTUAL_ENV}/bin/pip install --no-cache-dir -r /requirements.txt
 
+###
+
 FROM alpine:3.17
 
 ENV PYTHONIOENCODING=utf-8
 ENV PYTHONUNBUFFERED=1
-
-COPY --from=builder /opt /opt
+ENV USER=app
+ENV UID=10001
 
 RUN echo "**** install Python ****" && \
     apk add --update --no-cache \
-            su-exec~=0.2 \
             ffmpeg~=5.1 \
-            curl~=7.87 \
+            curl~=7.88 \
             python3~=3.10 && \
     mkdir -p /app/tmp && \
     mkdir -p /app/conf
 
+COPY --from=builder /opt /opt
 COPY entrypoint.sh run.sh /
 COPY ./src /app/
 
-WORKDIR /app
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/${USER}" \
+    --shell "/sbin/nologin" \
+    --uid "${UID}" \
+    "${USER}" && \
+    chown -R app:app /app
 
-ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
+
+WORKDIR /app
+USER app
+
 CMD ["/bin/sh", "/run.sh"]
