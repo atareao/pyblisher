@@ -57,12 +57,13 @@ class YouTube:
                 print(item)
                 video_id = item['id']['videoId']
                 link = f"{YTURL}/watch?v={video_id}"
-                video = {"title": item['snippet']['title'],
-                         "description": item['snippet']['description'],
-                         "thumbnail": item['snippet']['thumbnails']['high']['url'],
-                         "yt_id": video_id,
-                         "link": link,
-                         "published_at": item['snippet']['publishedAt']}
+                video = {
+                    "title": item['snippet']['title'],
+                    "description": item['snippet']['description'],
+                    "thumbnail": item['snippet']['thumbnails']['high']['url'],
+                    "yt_id": video_id,
+                    "link": link,
+                    "published_at": item['snippet']['publishedAt']}
                 videos.append(video)
             if 'nextPageToken' in data and data['nextPageToken']:
                 more_videos = self.get_videos(channel_id,
@@ -110,14 +111,15 @@ class YouTube:
                 video_id = item['snippet']['resourceId']['videoId']
                 link = f"{YTURL}/watch?v={video_id}&list={playlist_id}"
                 download_link = f"{YTURL}/watch?v={video_id}"
-                video = {"title": item['snippet']['title'],
-                         "description": item['snippet']['description'],
-                         "thumbnail": item['snippet']['thumbnails']['high']['url'],
-                         "yt_id": video_id,
-                         "position": item['snippet']['position'],
-                         "download_link": download_link,
-                         "link": link,
-                         "published": False}
+                video = {
+                    "title": item['snippet']['title'],
+                    "description": item['snippet']['description'],
+                    "thumbnail": item['snippet']['thumbnails']['high']['url'],
+                    "yt_id": video_id,
+                    "position": item['snippet']['position'],
+                    "download_link": download_link,
+                    "link": link,
+                    "published": False}
                 Log.debug(video)
                 videos.append(video)
             if 'nextPageToken' in data and data['nextPageToken']:
@@ -160,10 +162,17 @@ class YouTube:
 
 if __name__ == "__main__":
     import os
+    from video import Video
     from dotenv import load_dotenv
     load_dotenv()
     yt_key = os.getenv('YT_KEY')
     channel_id = os.getenv('YT_CHANNEL')
     youtube = YouTube(yt_key)
-    videos = youtube.get_videos(channel_id)
-    print(videos)
+    yt_videos = youtube.get_videos(channel_id,
+                                   published_after="2023-04-01T16:00:01Z")
+    for yt_video in yt_videos:
+        Video.new(yt_video['title'],
+                  yt_video['description'],
+                  yt_video['yt_id'],
+                  yt_video['link'],
+                  yt_video['published_at'])
