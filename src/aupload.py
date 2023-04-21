@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # Copyright (c) 2021 Lorenzo Carbonell <a.k.a. atareao>
 
@@ -10,8 +10,8 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -27,8 +27,11 @@ import time
 import argparse
 import json
 import requests
+import logging
 from requests_oauthlib import OAuth1
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 MEDIA_ENDPOINT_URL = 'https://upload.twitter.com/1.1/media/upload.json'
 POST_TWEET_URL = 'https://api.twitter.com/1.1/statuses/update.json'
@@ -51,7 +54,7 @@ class ImageTweet(object):
         '''
         Initializes Upload
         '''
-        print('INIT')
+        logger.info('INIT')
 
         request_data = {
             'command': 'INIT',
@@ -66,7 +69,7 @@ class ImageTweet(object):
 
         self.media_id = media_id
 
-        print('Media ID: %s' % str(media_id))
+        logger.info('Media ID: %s' % str(media_id))
 
     def upload_append(self):
         '''
@@ -79,7 +82,7 @@ class ImageTweet(object):
         while bytes_sent < self.total_bytes:
             chunk = file.read(4*1024*1024)
 
-            print('APPEND')
+            logger.info('APPEND')
 
             request_data = {
                 'command': 'APPEND',
@@ -88,29 +91,29 @@ class ImageTweet(object):
             }
 
             files = {
-                'media':chunk
+                'media': chunk
             }
 
             req = requests.post(url=MEDIA_ENDPOINT_URL, data=request_data,
                                 files=files, auth=self.oauth)
 
             if req.status_code < 200 or req.status_code > 299:
-                print(req.status_code)
-                print(req.text)
+                logger.info(req.status_code)
+                logger.info(req.text)
                 sys.exit(0)
 
             segment_id = segment_id + 1
             bytes_sent = file.tell()
 
-            print('%s of %s bytes uploaded' % (str(bytes_sent), str(self.total_bytes)))
+            logger.info(f"{bytes_sent} of {self.total_bytes} bytes uploaded")
 
-        print('Upload chunks complete.')
+        logger.info('Upload chunks complete.')
 
     def upload_finalize(self):
         '''
         Finalizes uploads and starts video processing
         '''
-        print('FINALIZE')
+        logger.info('FINALIZE')
 
         request_data = {
             'command': 'FINALIZE',
@@ -119,7 +122,7 @@ class ImageTweet(object):
 
         req = requests.post(url=MEDIA_ENDPOINT_URL, data=request_data,
                             auth=self.oauth)
-        print(req.json())
+        logger.debug(req.json())
 
         self.processing_info = req.json().get('processing_info', None)
         self.check_status()
@@ -158,7 +161,6 @@ class ImageTweet(object):
 
         self.processing_info = req.json().get('processing_info', None)
         self.check_status()
-
 
     def tweet(self):
         '''
@@ -228,7 +230,7 @@ class VideoTweet(object):
             }
 
             files = {
-                'media':chunk
+                'media': chunk
             }
 
             req = requests.post(url=MEDIA_ENDPOINT_URL, data=request_data,
@@ -242,7 +244,7 @@ class VideoTweet(object):
             segment_id = segment_id + 1
             bytes_sent = file.tell()
 
-            print('%s of %s bytes uploaded' % (str(bytes_sent), str(self.total_bytes)))
+            print(f"{bytes_sent} of {self.total_bytes} bytes uploaded")
 
         print('Upload chunks complete.')
 
@@ -319,9 +321,9 @@ def post_tweet(oauth, message):
     print(req.json)
 
 
-
-if __name__ == '__main__': 
-    config_file = os.path.join(os.path.expanduser('~'), '.config', 'twitter', 'config.json')
+if __name__ == '__main__':
+    config_file = os.path.join(
+            os.path.expanduser('~'), '.config', 'twitter', 'config.json')
     parser = argparse.ArgumentParser(description="Send video to twitter")
     parser.add_argument('--message', required=True)
     parser.add_argument('--file', required=True)
