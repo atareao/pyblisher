@@ -32,7 +32,6 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from video import Video
 from table import Table
-from utils import Log
 from ytapi import YouTube
 from threading import Thread
 from plumbum import local
@@ -42,16 +41,10 @@ from mastodonapi import MastodonClient
 from fdapi import PeerTube
 from retry import retry
 
-LOG_FORMAT = "%(levelname)s %(asctime)s - %(message)s"
 Table.DATABASE = "/app/database.db"
-Log.LEVEL = Log.DEBUG
 
-logging.basicConfig(stream=sys.stdout,
-                    filemode="w",
-                    format=LOG_FORMAT,
-                    level=logging.INFO)
-
-logger = logging.getLogger()
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 Video.inicializate()
@@ -109,7 +102,7 @@ def populate(yt_video):
     message = title + '\n\n'
     largo = 270 - len(message) - len(link)
     message += yt_video['description'][0:largo] + '...\n\n' + link
-    message_discord = "**" + title + "**\n"
+    message_discord = f"**{title}**\n"
     message_discord += yt_video["description"] + "\n" + link
     message_mastodon = f"{title}\n{description}"
     max_length = 479 - len(link)
