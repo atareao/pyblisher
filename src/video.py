@@ -22,6 +22,9 @@
 # SOFTWARE.
 
 from table import Table
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Video(Table):

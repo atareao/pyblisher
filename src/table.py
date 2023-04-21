@@ -24,6 +24,9 @@
 import sqlite3
 from utils import Log
 from collections import OrderedDict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class NoUnikeys(Exception):

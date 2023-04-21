@@ -43,7 +43,10 @@ from retry import retry
 
 Table.DATABASE = "/app/database.db"
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+FORMAT = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+logging.basicConfig(stream=sys.stdout,
+                    format=FORMAT,
+                    level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()

@@ -26,6 +26,9 @@ import time
 import mimetypes
 import requests
 import toml
+import logging
+
+logger = logging.getLogger(__name__)
 
 mimetypes.init()
 
@@ -108,19 +111,19 @@ class PeerTube:
                 "license": license_id,
                 "privacy": privace_policy_id
                 }
-        print(data)
+        logger.debug(data)
         filename = os.path.basename(filepath)
         mimetype = mimetypes.guess_type(filepath)[0]
-        print(f"Going to upload {filepath} with mimetype {mimetype}")
+        logger.info(f"Going to upload {filepath} with mimetype {mimetype}")
         with open(filepath, 'rb') as file_reader:
             files = {"videofile": (filename, file_reader, mimetype)}
             response = requests.post(url, headers=headers, data=data,
                                      files=files)
-            print(response.status_code)
-            print(response.content)
+            logger.debug(response.status_code)
+            logger.debug(response.content)
             if response.status_code == 200:
                 return True
-            print(f"Can't download {filepath}")
+            logger.error(f"Can't download {filepath}")
         return False
 
     def logout(self):
@@ -137,7 +140,7 @@ class PeerTube:
             self.conf['token']['expires_in'] = 0
             self.conf['token']['refresh_token_expires_in'] = 0
             self.__save_conf()
-            print("===")
+            logger.info("===")
 
     def login(self):
         if self.conf['client']['client_id'] == "" or \
@@ -157,7 +160,7 @@ class PeerTube:
         try:
             conf = toml.load(self.path)
         except Exception as exception:
-            print(exception)
+            logger.error(exception)
         return conf
 
     def __login_prerequisite(self):
@@ -217,7 +220,7 @@ class PeerTube:
             self.conf['token'] = data
             self.__save_conf()
         else:
-            print(response.status_code)
+            logger.debug(response.status_code)
             self.conf['token']['refresh_token_expires_in'] = 0
             self.__save_conf()
 
@@ -231,7 +234,7 @@ if __name__ == '__main__':
     load_dotenv()
     pt_path = os.getenv("PT_PATH")
     peerTube = PeerTube(pt_path)
-    print(peerTube.get_user_info())
+    logger.info(peerTube.get_user_info())
     channel_id = os.getenv('PT_CHANNEL_ID')
     name = "test"
     filepath = "cap5.mp4"

@@ -30,7 +30,6 @@ import requests
 import logging
 from requests_oauthlib import OAuth1
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 MEDIA_ENDPOINT_URL = 'https://upload.twitter.com/1.1/media/upload.json'
@@ -136,7 +135,7 @@ class ImageTweet(object):
 
         state = self.processing_info['state']
 
-        print('Media processing status is %s ' % state)
+        logger.info('Media processing status is %s ' % state)
 
         if state == u'succeeded':
             return
@@ -146,10 +145,10 @@ class ImageTweet(object):
 
         check_after_secs = self.processing_info['check_after_secs']
 
-        print('Checking after %s seconds' % str(check_after_secs))
+        logger.info('Checking after %s seconds' % str(check_after_secs))
         time.sleep(check_after_secs)
 
-        print('STATUS')
+        logger.info('STATUS')
 
         request_params = {
             'command': 'STATUS',
@@ -173,7 +172,7 @@ class ImageTweet(object):
 
         req = requests.post(url=POST_TWEET_URL, data=request_data,
                             auth=self.oauth)
-        print(req.json())
+        logger.debug(req.json())
 
 
 class VideoTweet(object):
@@ -193,7 +192,7 @@ class VideoTweet(object):
         '''
         Initializes Upload
         '''
-        print('INIT')
+        logger.info('INIT')
 
         request_data = {
             'command': 'INIT',
@@ -208,7 +207,7 @@ class VideoTweet(object):
 
         self.media_id = media_id
 
-        print('Media ID: %s' % str(media_id))
+        logger.info('Media ID: %s' % str(media_id))
 
     def upload_append(self):
         '''
@@ -221,7 +220,7 @@ class VideoTweet(object):
         while bytes_sent < self.total_bytes:
             chunk = file.read(4*1024*1024)
 
-            print('APPEND')
+            logger.info('APPEND')
 
             request_data = {
                 'command': 'APPEND',
@@ -237,22 +236,22 @@ class VideoTweet(object):
                                 files=files, auth=self.oauth)
 
             if req.status_code < 200 or req.status_code > 299:
-                print(req.status_code)
-                print(req.text)
+                logger.debug(req.status_code)
+                logger.debug(req.text)
                 sys.exit(0)
 
             segment_id = segment_id + 1
             bytes_sent = file.tell()
 
-            print(f"{bytes_sent} of {self.total_bytes} bytes uploaded")
+            logger.info(f"{bytes_sent} of {self.total_bytes} bytes uploaded")
 
-        print('Upload chunks complete.')
+        logger.info('Upload chunks complete.')
 
     def upload_finalize(self):
         '''
         Finalizes uploads and starts video processing
         '''
-        print('FINALIZE')
+        logger.info('FINALIZE')
 
         request_data = {
             'command': 'FINALIZE',
@@ -261,7 +260,7 @@ class VideoTweet(object):
 
         req = requests.post(url=MEDIA_ENDPOINT_URL, data=request_data,
                             auth=self.oauth)
-        print(req.json())
+        logger.debug(req.json())
 
         self.processing_info = req.json().get('processing_info', None)
         self.check_status()
@@ -275,7 +274,7 @@ class VideoTweet(object):
 
         state = self.processing_info['state']
 
-        print('Media processing status is %s ' % state)
+        logger.info('Media processing status is %s ' % state)
 
         if state == u'succeeded':
             return
@@ -285,10 +284,10 @@ class VideoTweet(object):
 
         check_after_secs = self.processing_info['check_after_secs']
 
-        print('Checking after %s seconds' % str(check_after_secs))
+        logger.info('Checking after %s seconds' % str(check_after_secs))
         time.sleep(check_after_secs)
 
-        print('STATUS')
+        logger.info('STATUS')
 
         request_params = {
             'command': 'STATUS',
@@ -312,13 +311,13 @@ class VideoTweet(object):
 
         req = requests.post(url=POST_TWEET_URL, data=request_data,
                             auth=self.oauth)
-        print(req.json())
+        logger.debug(req.json())
 
 
 def post_tweet(oauth, message):
     request_data = {'status': message}
     req = requests.post(url=POST_TWEET_URL, data=request_data, auth=oauth)
-    print(req.json)
+    logger.debug(req.json)
 
 
 if __name__ == '__main__':

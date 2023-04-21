@@ -21,8 +21,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
 import requests
 from utils import Log
+
+logger = logging.getLogger(__name__)
 
 URL = 'https://www.googleapis.com/youtube/v3'
 YTURL = 'https://www.youtube.com'
