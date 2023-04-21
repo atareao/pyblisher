@@ -113,7 +113,7 @@ class MastodonClient:
             while info is None:
                 info = self.get_media_info(id)
                 sleep(30)
-                tries += 1
+                tries = tries + 1
                 print(f"Try n {tries}")
                 if tries > 10:
                     return None
@@ -125,13 +125,13 @@ class MastodonClient:
         if response and "blurhash" in response and response["blurhash"]:
             id = response['id']
             info = None
-            tries = 0
+            ntry = 0
             while info is None:
                 info = self.get_media_info(id)
                 sleep(30)
-                tries += 1
-                print(f"Try n {tries}")
-                if tries > 10:
+                ntry = ntry + 1
+                print(f"Try n {ntry}")
+                if ntry > 10:
                     return None
             return self.toot(status, [id])
 
