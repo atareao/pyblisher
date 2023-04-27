@@ -23,7 +23,6 @@
 
 import logging
 import requests
-from utils import Log
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +73,8 @@ class YouTube:
                                               data['nextPageToken'])
                 videos += more_videos
         else:
-            Log.error(response.status_code)
-            Log.error(response.text)
+            logger.error(response.status_code)
+            logger.error(response.text)
         return videos
 
     def get_channels(self, for_user_name, next_token=None):
@@ -92,8 +91,8 @@ class YouTube:
             data = response.json()
             print(data)
         else:
-            Log.error(response.status_code)
-            Log.error(response.text)
+            logger.error(response.status_code)
+            logger.error(response.text)
         return channels
 
     def get_videos_from_list(self, playlist_id, next_token=None,
@@ -103,7 +102,7 @@ class YouTube:
                f"&playlistId={playlist_id}&key={self.__key}")
         if next_token:
             url += f"&pageToken={next_token}"
-        Log.info(url)
+        logger.info(url)
         response = requests.get(url=url)
         if response.status_code == 200:
             data = response.json()
@@ -123,7 +122,7 @@ class YouTube:
                     "download_link": download_link,
                     "link": link,
                     "published": False}
-                Log.debug(video)
+                logger.debug(video)
                 videos.append(video)
             if 'nextPageToken' in data and data['nextPageToken']:
                 more_videos = self.get_videos_from_list(playlist_id,
@@ -131,9 +130,9 @@ class YouTube:
                                                         reverse_list)
                 videos += more_videos
         else:
-            Log.error(response.status_code)
-            Log.error(response.text)
-        Log.info(f"Reverse: {reverse_list}")
+            logger.error(response.status_code)
+            logger.error(response.text)
+        logger.info(f"Reverse: {reverse_list}")
         videos = sorted(videos, key=lambda k: k['position'],
                         reverse=reverse_list)
         return videos
@@ -151,15 +150,15 @@ class YouTube:
                 playlist = {"yt_id": item['id'],
                             "title": item["snippet"]["title"],
                             "reverse": False}
-                Log.debug(playlist)
+                logger.debug(playlist)
                 playlists.append(playlist)
             if 'nextPageToken' in data and data['nextPageToken']:
                 more_playlists = self.get_playlists(channel_id,
                                                     data['nextPageToken'])
                 playlists += more_playlists
         else:
-            Log.error(response.status_code)
-            Log.error(response.text)
+            logger.error(response.status_code)
+            logger.error(response.text)
         return playlists
 
 

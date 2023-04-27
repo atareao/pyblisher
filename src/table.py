@@ -22,7 +22,6 @@
 # SOFTWARE.
 
 import sqlite3
-from utils import Log
 from collections import OrderedDict
 import logging
 
@@ -58,14 +57,14 @@ class Table:
         try:
             conn = sqlite3.connect(cls.DATABASE)
             cursor = conn.cursor()
-            Log.info(sqlquery)
+            logger.info(sqlquery)
             if data:
                 lastrowid = cursor.execute(sqlquery, data).lastrowid
             else:
                 lastrowid = cursor.execute(sqlquery).lastrowid
             conn.commit()
         except Exception as exception:
-            Log.error(exception)
+            logger.error(exception)
             lastrowid = None
         finally:
             if conn:
@@ -78,11 +77,11 @@ class Table:
         try:
             conn = sqlite3.connect(cls.DATABASE)
             cursor = conn.cursor()
-            Log.info(sqlquery)
+            logger.info(sqlquery)
             cursor.execute(sqlquery)
             return cursor.fetchall()
         except Exception as exception:
-            Log.error(exception)
+            logger.error(exception)
         finally:
             if conn:
                 conn.close()
