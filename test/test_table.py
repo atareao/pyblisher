@@ -23,12 +23,12 @@
 
 import unittest
 import sys
+import logging
 import os
 sys.path.append(os.path.join("../src"))
 from table import Table
-from utils import Log
 
-Log.LEVEL = Log.DEBUG
+logger = logging.getLogger(__name__)
 
 
 class Sample(Table):
@@ -53,17 +53,17 @@ class TestTable(unittest.TestCase):
             os.remove(Sample.DATABASE)
 
     def test_exist_database(self):
-        Log.info("=== Exists database ===")
+        logger.info("=== Exists database ===")
         self.assertTrue(os.path.exists(Sample.DATABASE))
 
     def test_columns(self):
-        Log.info("=== Test columns ===")
+        logger.info("=== Test columns ===")
         columns = Sample.COLUMNS
         self.assertTrue('id' in columns)
         self.assertTrue('name' in columns)
 
     def test_create(self):
-        Log.info("=== Test create item ===")
+        logger.info("=== Test create item ===")
         sample1 = Sample.from_dict({"name": "Sample 1"})
         sample1.save()
         returned = Sample.get_by_id(sample1.id)
@@ -71,31 +71,31 @@ class TestTable(unittest.TestCase):
         self.assertEqual(sample1, returned)
 
     def test_differents(self):
-        Log.info("=== Test differents ===")
+        logger.info("=== Test differents ===")
         sample1 = Sample.from_dict({"name": "Sample 1"})
         sample1.save()
-        Log.info(sample1.name)
+        logger.info(sample1.name)
         sample2 = Sample.from_dict({"name": "Sample 2"})
         sample2.save()
-        Log.info(sample2.name)
+        logger.info(sample2.name)
         self.assertNotEqual(sample1, sample2)
 
     def test_exists(self):
-        Log.info("=== Test exists ===")
+        logger.info("=== Test exists ===")
         sample1 = Sample.from_dict({"name": "Sample 1"})
         sample1.save()
         sample2 = Sample.from_dict({"name": "Sample 1"})
         self.assertTrue(sample2.exists())
 
     def test_get_by_id(self):
-        Log.info("=== Test get_by_id ===")
+        logger.info("=== Test get_by_id ===")
         sample1 = Sample.from_dict({"name": "Sample 1"})
         sample1.save()
         sample2 = Sample.get_by_id(sample1.id)
         self.assertEqual(sample1, sample2)
 
     def test_get_all(self):
-        Log.info("=== Test get_all ===")
+        logger.info("=== Test get_all ===")
         sample1 = Sample.from_dict({"name": "Sample 1"})
         sample1.save()
         sample2 = Sample.from_dict({"name": "Sample 2"})
@@ -106,7 +106,7 @@ class TestTable(unittest.TestCase):
         self.assertEqual(len(samples), 3)
 
     def test_select(self):
-        Log.info("=== Test select ===")
+        logger.info("=== Test select ===")
         sample1 = Sample.from_dict({"name": "Sample 1"})
         sample1.save()
         sample2 = Sample.from_dict({"name": "Sample 2"})
