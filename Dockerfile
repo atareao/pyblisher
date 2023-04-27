@@ -32,7 +32,7 @@ ENV UID=10001
 RUN echo "**** install Python ****" && \
     apk add --update --no-cache \
             ffmpeg~=5.1 \
-            curl~=7.88 \
+            curl~=8.0 \
             python3~=3.10 && \
     mkdir -p /app/tmp && \
     mkdir -p /app/conf
