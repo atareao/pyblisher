@@ -39,19 +39,31 @@ from requests_oauthlib import OAuth1
 from aupload import VideoTweet
 from mastodonapi import MastodonClient
 from fdapi import PeerTube
+from zinc import ZincClient
 from retry import retry
 
 Table.DATABASE = "/app/database.db"
 
 FORMAT = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
 logging.basicConfig(stream=sys.stdout,
                     format=FORMAT,
-                    level=logging.INFO)
+                    level=logging.getLevelName(LOG_LEVEL))
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 Video.inicializate()
 app = FastAPI()
+
+zbs = os.getenv("ZINC_BASE_URL", None)
+zi = os.getenv("ZINC_INDICE", None)
+zt = os.getenv("ZINC_TOKEN", None)
+ZC = ZincClient(zbs, zi, zt) if zbs and zi and zt else None
+
+
+def populate_in_zs(data):
+    if ZC:
+        ZC.populate(data)
 
 
 @app.get("/status/")
@@ -75,6 +87,7 @@ async def update():
                 athread.start()
                 break
             else:
+                populate_in_zs({"status": "publicado", "data": yt_video})
                 logger.info("Publicado")
     else:
         yt_videos = youtube.get_videos(yt_channel)
@@ -94,6 +107,7 @@ async def get_videos():
 
 
 def populate(yt_video):
+    populate_in_zs(yt_video)
     origen = "/tmp/origen.mp4"
     destino = "/tmp/destino.mp4"
     thumbnail_file = "/tmp/thumbnail.jpg"
@@ -215,6 +229,7 @@ def tweet(message, filename):
     video_tweet.upload_append()
     video_tweet.upload_finalize()
     video_tweet.tweet()
+    populate_in_zs({"destination": "twitter", "message": message})
     logger.info("End tweeting")
 
 
@@ -225,6 +240,7 @@ def toot(message, filename, description, thumbnail):
     access_token = os.getenv("MASTODON_ACCESS_TOKEN")
     mastodon_client = MastodonClient(base_uri, access_token)
     mastodon_client.toot_with_media2(message, filename, description, thumbnail)
+    populate_in_zs({"destination": "mastodon", "message": message})
     logger.info("End message in Mastodon")
 
 
@@ -236,6 +252,7 @@ def discordea(message):
     url = f"https://discord.com/api/webhooks/{channel}/{token}"
     data = {"content": message}
     requests.post(url, data)
+    populate_in_zs({"destination": "discord", "message": message})
     logger.info("End message in Discord")
 
 
@@ -248,6 +265,8 @@ def telegramea(message, filename):
     url = f"https://api.telegram.org/bot{token}/sendVideo"
     with open(filename, "rb") as fr:
         requests.post(url, data=data, files={"video": fr})
+        populate_in_zs({"destination": "telegram", "data": data,
+                        "message": message})
     logger.info("End message in Telegram")
 
 
@@ -267,6 +286,8 @@ def telegramea_al_grupo(message, filename):
     url = f"https://api.telegram.org/bot{token}/sendVideo"
     with open(filename, "rb") as fr:
         requests.post(url, data=data, files={"video": fr})
+        populate_in_zs({"destination": "telegram", "data": data,
+                        "message": message})
     logger.info("End message in Telegram")
 
 
@@ -278,6 +299,8 @@ def export2PeerTube(title, description, filename):
     peerTube = PeerTube(pt_path)
     response = peerTube.upload(channel_id, filename, title, description)
     logger.info(response)
+    populate_in_zs({"destination": "peertube", "data": channel_id,
+                    "title": title, "description": description})
     logger.info("End export to PeerTube")
 
 
