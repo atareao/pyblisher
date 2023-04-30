@@ -32,7 +32,7 @@ class ZincClient:
     def __init__(self, base_url, indice, token):
         logger.debug("Zinc base url: %s", base_url)
         logger.debug("Zinc indice: %s", indice)
-        self._url = f"https://{base_url}/api/{indice}/_doc"
+        self._url = f"https://{base_url}/api/default/{indice}/_json"
         self._headers = {"Authorization": f"Basic {token}",
                          "Content-Type": "application/json",
                          "Accept": "application/json"}
