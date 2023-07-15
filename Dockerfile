@@ -1,4 +1,4 @@
-FROM alpine:3.17 as builder
+FROM alpine:3.18 as builder
 
 LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
 
@@ -10,8 +10,8 @@ RUN echo "**** install Python ****" && \
             .build-deps \
             gcc~=12.2 \
             musl-dev~=1.2 \
-            python3-dev~=3.10 \
-            python3~=3.10 && \
+            python3-dev~=3.11 \
+            python3~=3.11 && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /
@@ -22,7 +22,7 @@ RUN echo "**** install Python dependencies **** " && \
 
 ###
 
-FROM alpine:3.17
+FROM alpine:3.18
 
 ENV PYTHONIOENCODING=utf-8
 ENV PYTHONUNBUFFERED=1
@@ -31,9 +31,9 @@ ENV UID=10001
 
 RUN echo "**** install Python ****" && \
     apk add --update --no-cache \
-            ffmpeg~=5.1 \
-            curl~=8.0 \
-            python3~=3.10 && \
+            ffmpeg~=6.0 \
+            curl~=8.1 \
+            python3~=3.11 && \
     mkdir -p /app/tmp && \
     mkdir -p /app/conf
 

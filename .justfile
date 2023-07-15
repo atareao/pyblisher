@@ -5,21 +5,20 @@ version := `git tag -l  | tail -n1`
 build:
     echo {{version}}
     echo {{name}}
-    podman build -t {{user}}/{{name}}:{{version}} \
+    docker build -t {{user}}/{{name}}:{{version}} \
                  -t {{user}}/{{name}}:latest \
                  .
 
 push:
-    podman push {{user}}/{{name}}:{{version}}
-    podman push {{user}}/{{name}}:latest
+    docker push --all-tags {{user}}/{{name}}
 
 build-test:
     echo {{version}}
     echo {{name}}
-    podman build -t {{user}}/{{name}}:test \
+    docker build -t {{user}}/{{name}}:test \
                  .
 run-test:
-    podmn run --rm \
+    docker run --rm \
                --init \
                --name {{name}} \
                --detach \
