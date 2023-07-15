@@ -136,7 +136,6 @@ def populate(yt_video):
         return
     try:
         convert(origen, destino)
-        tweet(message, destino)
         logger.info("Start save YouTube video")
         Video.new(yt_video['title'],
                   yt_video['description'],
@@ -148,6 +147,10 @@ def populate(yt_video):
         logger.error(exception)
         logger.info("Can not continue")
         return
+    try:
+        tweet(message, destino)
+    except Exception as exception:
+        logger.error(exception)
     try:
         telegramea(message, destino)
     except Exception as exception:
