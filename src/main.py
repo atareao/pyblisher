@@ -29,7 +29,6 @@ import requests
 import yt_dlp
 from PIL import Image
 from dotenv import load_dotenv
-from fastapi import FastAPI
 from video import Video
 from table import Table
 from ytapi import YouTube
@@ -37,10 +36,15 @@ from threading import Thread
 from plumbum import local
 from requests_oauthlib import OAuth1
 from aupload import VideoTweet
+from twitter import Twitter
 from mastodonapi import MastodonClient
 from fdapi import PeerTube
 from zinc import ZincClient
 from retry import retry
+from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.templating import Jinja2Templates
+from secrets import compare_digest
 
 Table.DATABASE = "/app/database.db"
 
@@ -54,6 +58,13 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 Video.inicializate()
 app = FastAPI()
+security = HTTPBasic()
+
+templates = Jinja2Templates(directory="templates")
+
+PYB_USER = os.getenv("PYB_USER")
+PYB_PASSWORD = os.getenv("PYB_PASSWORD")
+TW_CONFIG = os.getenv("TW_CONFIG")
 
 zbs = os.getenv("ZINC_BASE_URL", None)
 zi = os.getenv("ZINC_INDICE", None)
@@ -66,9 +77,41 @@ def populate_in_zs(data):
         ZC.populate(data)
 
 
-@app.get("/status/")
-async def status():
+def authorize(credentials: HTTPBasicCredentials = Depends(security)):
+    is_user_ok = compare_digest(credentials.username, PYB_USER)
+    is_pass_ok = compare_digest(credentials.password, PYB_PASSWORD)
+
+    if not (is_user_ok and is_pass_ok):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Incorrect email or password.',
+            headers={'WWW-Authenticate': 'Basic'},
+            )
+
+
+@app.get("/status/", dependencies=[Depends(authorize)])
+async def get_status():
     return {"status": "OK", "message": "Up and running"}
+
+
+@app.get("/register", dependencies=[Depends(authorize)])
+async def register(request: Request):
+    tw = Twitter(TW_CONFIG)
+    client_id = tw.get_client_id()
+    return templates.TemplateResponse(
+            "index.html", {"request": request, "client_id": client_id})
+
+
+@app.get("/redirect", dependencies=[Depends(authorize)])
+async def get_redirect(request: Request):
+    params = {}
+    for item in str(request.query_params).split("&"):
+        key, value = item.split("=")
+        params[key] = value
+    print(params)
+    tw = Twitter(TW_CONFIG)
+    tw.get_access_token(params["code"])
+    return {"status": "OK", "message": "Twitter configurate"}
 
 
 @app.get("/update/")
@@ -148,10 +191,6 @@ def populate(yt_video):
         logger.info("Can not continue")
         return
     try:
-        tweet(message, destino)
-    except Exception as exception:
-        logger.error(exception)
-    try:
         telegramea(message, destino)
     except Exception as exception:
         logger.error(exception)
@@ -169,6 +208,10 @@ def populate(yt_video):
         logger.error(exception)
     try:
         export2PeerTube(title, description, origen)
+    except Exception as exception:
+        logger.error(exception)
+    try:
+        tweet(message, destino)
     except Exception as exception:
         logger.error(exception)
     clean(origen, destino, thumbnail_file)
@@ -220,18 +263,18 @@ def convert(origen, destino):
 @retry(tries=3, delay=10, logger=logger)
 def tweet(message, filename):
     logger.info("Start tweeting")
+    client_id = os.getenv("TW_CLIENT_ID")
+    client_secret = os.getenv("TW_CLIENT_SECRET")
+    access_token = os.getenv("TW_ACCESS_TOKEN")
+    refresh_token = os.getenv("TW_REFRESH_TOKEN")
     consumer_key = os.getenv("TW_CONSUMER_KEY")
     consumer_secret = os.getenv("TW_CONSUMER_SECRET")
-    access_token = os.getenv("TW_ACCESS_TOKEN")
-    access_token_secret = os.getenv("TW_ACCESS_TOKEN_SECRET")
-    oauth = OAuth1(consumer_key, client_secret=consumer_secret,
-                   resource_owner_key=access_token,
-                   resource_owner_secret=access_token_secret)
-    video_tweet = VideoTweet(oauth, message, filename)
-    video_tweet.upload_init()
-    video_tweet.upload_append()
-    video_tweet.upload_finalize()
-    video_tweet.tweet()
+    resource_owner_key = os.getenv("TW_RESOURCE_OWNER_KEY")
+    resource_owner_secret = os.getenv("TW_RESOURCE_OWNER_TOKEN")
+    tw = Twitter(client_id, client_secret, access_token, refresh_token,
+                 consumer_key, consumer_secret, resource_owner_key,
+                 resource_owner_secret)
+
     populate_in_zs([{"destination": "twitter", "message": message}])
     logger.info("End tweeting")
 
