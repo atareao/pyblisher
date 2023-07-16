@@ -163,3 +163,4 @@ include/
 load.sql
 database.db
 peertube.toml
+twitter.conf
