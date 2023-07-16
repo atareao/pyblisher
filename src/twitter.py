@@ -73,6 +73,10 @@ class Twitter:
     def get_client_id(self):
         return self._client_id
 
+    def get_redirect_uri(self):
+        return self._redirect_uri
+
+
     def get_access_token(self, code):
         url = f"{BASE_URI}/2/oauth2/token"
         headers = {

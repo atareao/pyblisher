@@ -98,8 +98,15 @@ async def get_status():
 async def register(request: Request):
     tw = Twitter(TW_CONFIG)
     client_id = tw.get_client_id()
+    redirect_uri = tw.get_redirect_uri()
     return templates.TemplateResponse(
-            "index.html", {"request": request, "client_id": client_id})
+            "index.html",
+            {
+                "request": request,
+                "client_id": client_id,
+                "redirect_uri": redirect_uri
+            }
+        )
 
 
 @app.get("/redirect", dependencies=[Depends(authorize)])
