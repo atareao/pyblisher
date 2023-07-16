@@ -9,3 +9,4 @@ python-dotenv
 fastapi
 gunicorn
 uvicorn
+jinja2
