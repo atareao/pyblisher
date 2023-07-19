@@ -45,6 +45,7 @@ from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
 from secrets import compare_digest
+from bluesky import BlueSkyClient
 
 Table.DATABASE = "/app/database.db"
 
@@ -176,7 +177,9 @@ def populate(yt_video):
     if len(message_mastodon) > max_length:
         message_mastodon = message_mastodon[:max_length]
     message_mastodon = f"{message_mastodon}\n#atareaoConLinux\n{link}"
-
+    message_bluesky = f"{title}\n{description}"
+    end_bluesky = "\n#atareaoConLinux\n{link}"
+    message_bluesky = message_bluesky[:256 - len(end_bluesky)] + end_bluesky
     try:
         download(yt_id)
         download_thumbnail(yt_id)
@@ -215,6 +218,10 @@ def populate(yt_video):
         logger.error(exception)
     try:
         export2PeerTube(title, description, origen)
+    except Exception as exception:
+        logger.error(exception)
+    try:
+        populate_in_bluesky(message_bluesky)
     except Exception as exception:
         logger.error(exception)
     try:
@@ -270,18 +277,8 @@ def convert(origen, destino):
 @retry(tries=3, delay=10, logger=logger)
 def tweet(message, filename):
     logger.info("Start tweeting")
-    client_id = os.getenv("TW_CLIENT_ID")
-    client_secret = os.getenv("TW_CLIENT_SECRET")
-    access_token = os.getenv("TW_ACCESS_TOKEN")
-    refresh_token = os.getenv("TW_REFRESH_TOKEN")
-    consumer_key = os.getenv("TW_CONSUMER_KEY")
-    consumer_secret = os.getenv("TW_CONSUMER_SECRET")
-    resource_owner_key = os.getenv("TW_RESOURCE_OWNER_KEY")
-    resource_owner_secret = os.getenv("TW_RESOURCE_OWNER_TOKEN")
-    tw = Twitter(client_id, client_secret, access_token, refresh_token,
-                 consumer_key, consumer_secret, resource_owner_key,
-                 resource_owner_secret)
-
+    config_file = os.getenv("TW_CONFIG")
+    Twitter(config_file)
     populate_in_zs([{"destination": "twitter", "message": message}])
     logger.info("End tweeting")
 
@@ -295,6 +292,17 @@ def toot(message, filename, description, thumbnail):
     mastodon_client.toot_with_media2(message, filename, description, thumbnail)
     populate_in_zs([{"destination": "mastodon", "message": message}])
     logger.info("End message in Mastodon")
+
+
+@retry(tries=3, delay=5, logger=logger)
+def populate_in_bluesky(message):
+    logger.info("Start message in Bluesky")
+    user = os.getenv("BLUESKY_USER")
+    password = os.getenv("BLUESKY_PASSWORD")
+    blue_sky_client = BlueSkyClient(user, password)
+    blue_sky_client.post(message)
+    populate_in_zs([{"destination": "bluesky", "message": message}])
+    logger.info("End message in BlueSky")
 
 
 @retry(tries=3, delay=5, logger=logger)
