@@ -10,3 +10,4 @@ fastapi
 gunicorn
 uvicorn
 jinja2
+atproto
