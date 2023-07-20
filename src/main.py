@@ -178,7 +178,7 @@ def populate(yt_video):
         message_mastodon = message_mastodon[:max_length]
     message_mastodon = f"{message_mastodon}\n#atareaoConLinux\n{link}"
     message_bluesky = f"{title}\n{description}"
-    end_bluesky = "\n#atareaoConLinux\n{link}"
+    end_bluesky = f"\n#atareaoConLinux\n{link}"
     message_bluesky = message_bluesky[:256 - len(end_bluesky)] + end_bluesky
     try:
         download(yt_id)
@@ -278,7 +278,8 @@ def convert(origen, destino):
 def tweet(message, filename):
     logger.info("Start tweeting")
     config_file = os.getenv("TW_CONFIG")
-    Twitter(config_file)
+    tw = Twitter(config_file)
+    tw.populate_video(message, filename)
     populate_in_zs([{"destination": "twitter", "message": message}])
     logger.info("End tweeting")
 
