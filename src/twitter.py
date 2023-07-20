@@ -97,6 +97,7 @@ class Twitter:
             self._save()
 
     def update_access_token(self):
+        logger.info("Update access token")
         url = f"{BASE_URI}/2/oauth2/token"
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -206,6 +207,7 @@ class Twitter:
         """
         Publishes Tweet with attached video
         """
+        self.update_access_token()
         video_tweet = VideoTweet(self._oauth, filename)
         video_tweet.upload_init()
         video_tweet.upload_append()
