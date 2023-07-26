@@ -178,7 +178,7 @@ def populate(yt_video):
         message_mastodon = message_mastodon[:max_length]
     message_mastodon = f"{message_mastodon}\n#atareaoConLinux\n{link}"
     message_bluesky = f"{title}\n{description}"
-    end_bluesky = f"\n#atareaoConLinux\n{link}"
+    end_bluesky = f"\n\n#atareaoConLinux\n\n{link}"
     message_bluesky = message_bluesky[:256 - len(end_bluesky)] + end_bluesky
     try:
         download(yt_id)
