@@ -67,8 +67,12 @@ class Twitter:
             self._redirect_uri = redirect_uri
 
     def _save(self):
+        logger.debug("To save")
         with open(self._config_file, "w") as fw:
+            logger.info(f"Config file {self._config_file}")
             json.dump(self._config, fw)
+            logger.info(self._config)
+        logger.debug("Saved")
 
     def get_client_id(self):
         return self._client_id
@@ -78,22 +82,26 @@ class Twitter:
 
 
     def get_access_token(self, code):
+        logger.info("get_access_token")
         url = f"{BASE_URI}/2/oauth2/token"
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "Authorization": f"Basic {self._basic_auth}"
         }
-        data = {
+        payload = {
             "code": code,
             "grant_type": "authorization_code",
             "redirect_uri": self._redirect_uri,
             "code_verifier": "challenge"
             }
-        response = requests.post(url, data=data, headers=headers)
+        response = requests.post(url, data=payload, headers=headers)
         if response.status_code == 200:
-            new_data = response.json()
-            self._access_token = new_data["access_token"]
-            self._refresh_token = new_data["refresh_token"]
+            data = response.json()
+            logger.info(data)
+            self._access_token = data["access_token"]
+            self._refresh_token = data["refresh_token"]
+            self._config["access_token"] = self._access_token
+            self._config["refresh_token"] = self._refresh_token
             self._save()
 
     def update_access_token(self):
@@ -111,8 +119,10 @@ class Twitter:
         response = requests.post(url=url, headers=headers, data=payload)
         if response.status_code in [200, 201]:
             data = response.json()
-            self._config["access_token"] = data["access_token"]
-            self._config["refresh_token"] = data["refresh_token"]
+            self._access_token = data["access_token"]
+            self._refresh_token = data["refresh_token"]
+            self._config["access_token"] = self._access_token
+            self._config["refresh_token"] = self._refresh_token
             self._save()
             return
         message_error = f"Error {response.status_code}: {response.text}"
