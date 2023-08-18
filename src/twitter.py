@@ -80,7 +80,6 @@ class Twitter:
     def get_redirect_uri(self):
         return self._redirect_uri
 
-
     def get_access_token(self, code):
         logger.info("get_access_token")
         url = f"{BASE_URI}/2/oauth2/token"
@@ -129,7 +128,7 @@ class Twitter:
         raise Exception(message_error)
 
     def get_me(self):
-        url =  f"{BASE_URI}/1.1/account/verify_credentials.json"
+        url = f"{BASE_URI}/1.1/account/verify_credentials.json"
         response = requests.get(url=url, auth=self._oauth)
         if response.status_code == 200:
             data = response.json()
@@ -147,7 +146,6 @@ class Twitter:
         else:
             pprint(response.status_code)
             pprint(response)
-        
 
     def get_last_mentions(self, last_id=None):
         query = urllib.parse.quote("@atareao -filter:retweets")
@@ -222,7 +220,7 @@ class Twitter:
         video_tweet.upload_init()
         video_tweet.upload_append()
         video_tweet.upload_finalize()
-        if video_tweet.get_media_id() != None:
+        if video_tweet.get_media_id() is not None:
             url = f"{BASE_URI}/2/tweets"
             payload = {
                 "text": text,
@@ -253,9 +251,9 @@ class VideoTweet:
         return str(self.media_id)
 
     def upload_init(self):
-        '''
+        """
         Initializes Upload
-        '''
+        """
         logger.info('INIT')
 
         request_data = {
@@ -274,9 +272,9 @@ class VideoTweet:
         logger.info('Media ID: %s' % str(media_id))
 
     def upload_finalize(self):
-        '''
+        """
         Finalizes uploads and starts video processing
-        '''
+        """
         logger.info('FINALIZE')
 
         request_data = {
@@ -292,25 +290,25 @@ class VideoTweet:
         self.check_status()
 
     def check_status(self):
-        '''
+        """
         Checks video processing status
-        '''
+        """
         if self.processing_info is None:
             return
 
         state = self.processing_info['state']
 
-        logger.info('Media processing status is %s ' % state)
+        logger.info(f"Media processing status is {state}")
 
-        if state == u'succeeded':
+        if state == "succeeded":
             return
 
-        if state == u'failed':
+        if state == "failed":
             sys.exit(0)
 
-        check_after_secs = self.processing_info['check_after_secs']
-
-        logger.info('Checking after %s seconds' % str(check_after_secs))
+        check_after_secs = self.processing_info["check_after_secs"] \
+            if "check_after_secs" in self.processing_info else 20
+        logger.info(f"Checking after {check_after_secs} seconds")
         time.sleep(check_after_secs)
 
         logger.info('STATUS')
