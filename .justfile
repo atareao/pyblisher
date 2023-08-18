@@ -2,6 +2,13 @@ user    := "atareao"
 name    := `basename ${PWD}`
 version := `git tag -l  | tail -n1`
 
+rebuild:
+    echo {{version}}
+    echo {{name}}
+    docker build --no-cache \
+                 -t {{user}}/{{name}}:{{version}} \
+                 -t {{user}}/{{name}}:latest \
+                 .
 build:
     echo {{version}}
     echo {{name}}
