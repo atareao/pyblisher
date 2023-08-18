@@ -137,6 +137,21 @@ class PeerTube:
             logger.error(f"Can't download {filepath}")
         return False
 
+    def get_video_info(self, id):
+        base_url = self.conf['credentials']['base_url']
+        url = f"{base_url}/videos/{id}"
+        print(url)
+        token_type = self.conf['token']['token_type']
+        access_token = self.conf['token']['access_token']
+        headers = {
+                "Authorization": f"{token_type} {access_token}",
+                }
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        msg = f"HTTP Error code {response.status_code}. {response.text}"
+        raise Exception(msg)
+
     def get_metadata_video_file(self, uuid):
         base_url = self.conf['credentials']['base_url']
         url = f"{base_url}/videos/{uuid}/source"
@@ -160,7 +175,6 @@ class PeerTube:
                 }
         response = requests.get(url, headers=headers)
         return response
-
 
     def logout(self):
         base_url = self.conf['credentials']['base_url']
@@ -279,9 +293,8 @@ if __name__ == '__main__':
     # response = peerTube.upload(channel_id, name, filepath)
     response = peerTube.list_videos("atareaouser")
     pprint(response)
-    info = peerTube.get_metadata_video_file("9bd10e18-218b-491f-921f-a850412f8d90")
-    pprint(info.status_code)
-    pprint(info.text)
+    response = peerTube.get_video_info("771696")
+    pprint(response)
     # info = peerTube.download_video_file("9bd10e18-218b-491f-921f-a850412f8d90")
     # pprint(info.status_code)
     # pprint(info.text)
