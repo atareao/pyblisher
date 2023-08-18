@@ -53,6 +53,17 @@ class PeerTube:
             return response.json()
         return {}
 
+    def list_videos(self, name):
+        base_url = self.conf['credentials']['base_url']
+        url = f"{base_url}/accounts/{name}/videos"
+        logger.debug(f"Url: {url}")
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+        print(response.status_code)
+        print(response.text)
+        return []
+
     def upload(self, channel_id, filepath, name, description,
                privace_policy_id=1, license_id=1, language='es',
                category_id=15):
@@ -125,6 +136,31 @@ class PeerTube:
                 return True
             logger.error(f"Can't download {filepath}")
         return False
+
+    def get_metadata_video_file(self, uuid):
+        base_url = self.conf['credentials']['base_url']
+        url = f"{base_url}/videos/{uuid}/source"
+        print(url)
+        token_type = self.conf['token']['token_type']
+        access_token = self.conf['token']['access_token']
+        headers = {
+                "Authorization": f"{token_type} {access_token}",
+                }
+        response = requests.get(url, headers=headers)
+        return response
+
+    def download_video_file(self, filename):
+        base_url = self.conf['credentials']['base_url']
+        url = f"https://fediverse.tv/static/web-videos/{filename}"
+        print(url)
+        token_type = self.conf['token']['token_type']
+        access_token = self.conf['token']['access_token']
+        headers = {
+                "Authorization": f"{token_type} {access_token}",
+                }
+        response = requests.get(url, headers=headers)
+        return response
+
 
     def logout(self):
         base_url = self.conf['credentials']['base_url']
@@ -230,12 +266,22 @@ class PeerTube:
 
 
 if __name__ == '__main__':
+    from pprint import pprint
     from dotenv import load_dotenv
     load_dotenv()
     pt_path = os.getenv("PT_PATH")
     peerTube = PeerTube(pt_path)
-    logger.info(peerTube.get_user_info())
+    data = peerTube.get_user_info()
+    print(data)
     channel_id = os.getenv('PT_CHANNEL_ID')
     name = "test"
     filepath = "cap5.mp4"
     # response = peerTube.upload(channel_id, name, filepath)
+    response = peerTube.list_videos("atareaouser")
+    pprint(response)
+    info = peerTube.get_metadata_video_file("9bd10e18-218b-491f-921f-a850412f8d90")
+    pprint(info.status_code)
+    pprint(info.text)
+    # info = peerTube.download_video_file("9bd10e18-218b-491f-921f-a850412f8d90")
+    # pprint(info.status_code)
+    # pprint(info.text)
