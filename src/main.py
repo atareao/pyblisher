@@ -29,6 +29,7 @@ import requests
 import yt_dlp
 from PIL import Image
 from dotenv import load_dotenv
+from matrix import MatrixClient
 from video import Video
 from table import Table
 from ytapi import YouTube
@@ -296,11 +297,24 @@ def toot(message, filename, description, thumbnail):
 
 
 @retry(tries=3, delay=5, logger=logger)
+def populate_in_matrix(message):
+    logger.info("Start message in Matrix")
+    base_url = os.getenv("MATRIX_BASE_URL")
+    token = os.getenv("MATRIX_TOKEN")
+    room = os.getenv("MATRIX_ROOM")
+    matrix_client = MatrixClient(base_url, token, room)
+    matrix_client.populate(message)
+    populate_in_zs([{"destination": "matrix", "message": message}])
+    logger.info("End message in Matrix")
+
+
+@retry(tries=3, delay=5, logger=logger)
 def populate_in_bluesky(message):
     logger.info("Start message in Bluesky")
+    base_url = os.getenv("BLUESKY_BASE_URL")
     user = os.getenv("BLUESKY_USER")
     password = os.getenv("BLUESKY_PASSWORD")
-    blue_sky_client = BlueSkyClient(user, password)
+    blue_sky_client = BlueSkyClient(base_url, user, password)
     blue_sky_client.post(message)
     populate_in_zs([{"destination": "bluesky", "message": message}])
     logger.info("End message in BlueSky")
