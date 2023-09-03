@@ -174,6 +174,7 @@ def populate(yt_video):
     message_discord = f"**{title}**\n"
     message_discord += yt_video["description"] + "\n" + link
     message_mastodon = f"{title}\n{description}"
+    message_matrix = f"{title}\n{description}"
     max_length = 479 - len(link)
     if len(message_mastodon) > max_length:
         message_mastodon = message_mastodon[:max_length]
@@ -223,6 +224,10 @@ def populate(yt_video):
         logger.error(exception)
     try:
         populate_in_bluesky(message_bluesky)
+    except Exception as exception:
+        logger.error(exception)
+    try:
+        populate_in_matrix(message_matrix)
     except Exception as exception:
         logger.error(exception)
     try:
@@ -318,6 +323,17 @@ def populate_in_bluesky(message):
     blue_sky_client.post(message)
     populate_in_zs([{"destination": "bluesky", "message": message}])
     logger.info("End message in BlueSky")
+
+@retry(tries=3, delay=5, logger=logger)
+def populate_in_matrix(message):
+    logger.info("Start message in Matrix")
+    base_url = os.getenv("MATRIX_BASE_URL")
+    token = os.getenv("MATRIX_TOKEN")
+    room = os.getenv("MATRIX_ROOM")
+    matrix_client = MatrixClient(base_url, token, room)
+    matrix_client.populate(message)
+    populate_in_zs([{"destination": "matrix", "message": message}])
+    logger.info("End message in Matrix")
 
 
 @retry(tries=3, delay=5, logger=logger)

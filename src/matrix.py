@@ -25,7 +25,7 @@ import requests
 import sys
 import logging
 from urllib.parse import quote
-import uuid
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +39,9 @@ logger.addHandler(handler)
 class MatrixClient:
     def __init__(self, base_url, token, room):
         room = quote(room)
-        generated_uuid = uuid.uuid4().hex
+        ts = int(time.time())
         self._url = (f"https://{base_url}/_matrix/client/v3/rooms/{room}:"
-                     f"{base_url}/send/m.room.message/{generated_uuid}")
+                     f"{base_url}/send/m.room.message/{ts}")
         self._headers = {"Authorization": f"Bearer {token}",
                          "Content-Type": "application/json",
                          "Accept": "application/json"}
