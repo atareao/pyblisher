@@ -20,7 +20,7 @@ RUN echo "**** install Python ****" && \
             py3-pip~=23.1 && \
     rm -rf /var/lib/apt/lists/* && \
     echo "**** install Poetry ****" && \
-    pip install poetry==1.6.1
+    pip install --no-cache-dir poetry==1.6.1
 
 
 WORKDIR /app
