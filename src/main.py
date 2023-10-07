@@ -28,15 +28,12 @@ import logging
 import requests
 import yt_dlp
 from PIL import Image
-from dotenv import load_dotenv
 from matrix import MatrixClient
 from video import Video
 from table import Table
 from ytapi import YouTube
 from threading import Thread
 from plumbum import local
-from requests_oauthlib import OAuth1
-from aupload import VideoTweet
 from twitter import Twitter
 from mastodonapi import MastodonClient
 from fdapi import PeerTube
@@ -56,8 +53,7 @@ logging.basicConfig(stream=sys.stdout,
                     format=FORMAT,
                     level=logging.getLevelName(LOG_LEVEL))
 logger = logging.getLogger(__name__)
-
-load_dotenv()
+logging.getLevelName
 Video.inicializate()
 app = FastAPI()
 security = HTTPBasic()
@@ -88,7 +84,7 @@ def authorize(credentials: HTTPBasicCredentials = Depends(security)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Incorrect email or password.',
             headers={'WWW-Authenticate': 'Basic'},
-            )
+        )
 
 
 @app.get("/status/", dependencies=[Depends(authorize)])
@@ -102,13 +98,13 @@ async def register(request: Request):
     client_id = tw.get_client_id()
     redirect_uri = tw.get_redirect_uri()
     return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
-                "client_id": client_id,
-                "redirect_uri": redirect_uri
-            }
-        )
+        "index.html",
+        {
+            "request": request,
+            "client_id": client_id,
+            "redirect_uri": redirect_uri
+        }
+    )
 
 
 @app.get("/redirect", dependencies=[Depends(authorize)])
@@ -323,17 +319,6 @@ def populate_in_bluesky(message):
     blue_sky_client.post(message)
     populate_in_zs([{"destination": "bluesky", "message": message}])
     logger.info("End message in BlueSky")
-
-@retry(tries=3, delay=5, logger=logger)
-def populate_in_matrix(message):
-    logger.info("Start message in Matrix")
-    base_url = os.getenv("MATRIX_BASE_URL")
-    token = os.getenv("MATRIX_TOKEN")
-    room = os.getenv("MATRIX_ROOM")
-    matrix_client = MatrixClient(base_url, token, room)
-    matrix_client.populate(message)
-    populate_in_zs([{"destination": "matrix", "message": message}])
-    logger.info("End message in Matrix")
 
 
 @retry(tries=3, delay=5, logger=logger)

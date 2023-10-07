@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021 Lorenzo Carbonell <a.k.a. atareao>
+# Copyright (c) 2022 Lorenzo Carbonell <a.k.a. atareao>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-gunicorn main:app -k uvicorn.workers.UvicornWorker \
-	-w 1 \
-	--chdir /app \
-	--threads 1 \
-	--access-logfile - \
-	-b 0.0.0.0:8000
+import unittest
+import sys
+import os
+from dotenv import load_dotenv
+sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), "../src")))
+from zinc import ZincClient
+
+
+class TestZinc(unittest.TestCase):
+    def setUp(self):
+        load_dotenv()
+        base_url = os.getenv("ZINC_BASE_URL")
+        indice = os.getenv("ZINC_INDICE")
+        token = os.getenv("ZINC_TOKEN")
+        self._zc = ZincClient(base_url, indice, token)
+
+    def test_zinc(self):
+        response = self._zc.populate([
+            {"message": "Test"}
+            ])
+        self.assertIsNotNone(response)
+
+
+if __name__ == '__main__':
+    unittest.main()
+
