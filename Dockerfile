@@ -3,8 +3,6 @@
 ###############################################################################
 FROM alpine:3.18 as builder
 
-LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
-
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
@@ -34,6 +32,8 @@ RUN echo "**** install Python dependencies ****" && \
 ## Final image
 ###############################################################################
 FROM alpine:3.18
+
+LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
