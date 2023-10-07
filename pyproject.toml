@@ -1,10 +1,19 @@
 [tool.poetry]
 name = "pyblisher"
 version = "0.1.0"
-description = ""
+description = "A publisher"
 authors = ["Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>"]
+maintainers = ["Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/atareao/pyblihser"
+repository = "https://github.com/atareao/pyblihser"
+classifiers = [
+    "Development Status :: 4 - Beta"
+]
+packages = [
+    { include = "src" }
+]
 
 [tool.poetry.group.dev.dependencies]
 debugpy = "^1.8.0"
