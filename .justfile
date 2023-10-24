@@ -2,6 +2,9 @@ user    := "atareao"
 name    := `basename ${PWD}`
 version := `git tag -l  | tail -n1`
 
+default:
+    @just --list
+
 rebuild:
     echo {{version}}
     echo {{name}}
@@ -17,7 +20,8 @@ build:
                  .
 
 push:
-    docker push --all-tags {{user}}/{{name}}
+    docker push {{user}}/{{name}}:{{version}}
+    docker push {{user}}/{{name}}:latest
 
 build-test:
     echo {{version}}
