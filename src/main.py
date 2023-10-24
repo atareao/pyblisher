@@ -26,12 +26,10 @@ import os
 import sys
 import logging
 import requests
-import yt_dlp
-from PIL import Image
 from matrix import MatrixClient
 from video import Video
 from table import Table
-from ytapi import YouTube
+from ytdlman import YtDlMan
 from threading import Thread
 from plumbum import local
 from twitter import Twitter
@@ -121,14 +119,14 @@ async def get_redirect(request: Request):
 
 @app.get("/update/")
 async def update():
-    yt_key = os.getenv("YT_KEY")
+    logger.debug("Self update yt-dlp")
+    YtDlMan.self_update()
     yt_channel = os.getenv("YT_CHANNEL")
-    youtube = YouTube(yt_key)
     db_video = Video.get_last_video_published()
     if db_video:
-        yt_videos = youtube.get_videos(yt_channel, db_video.published_at)
+        yt_videos = YtDlMan.get_videos(yt_channel, db_video.published_at)
         for yt_video in yt_videos:
-            if yt_video['yt_id'] != db_video.yt_id:
+            if yt_video["yt_id"] != db_video.yt_id:
                 logger.info("Sin publicar")
                 athread = Thread(target=populate, args=(yt_video,))
                 athread.daemon = True
@@ -138,7 +136,7 @@ async def update():
                 populate_in_zs([{"status": "publicado", "data": yt_video}])
                 logger.info("Publicado")
     else:
-        yt_videos = youtube.get_videos(yt_channel)
+        yt_videos = YtDlMan.get_videos(yt_channel)
         for yt_video in yt_videos:
             Video.new(yt_video['title'],
                       yt_video['description'],
@@ -179,8 +177,8 @@ def populate(yt_video):
     end_bluesky = f"\n\n#atareaoConLinux\n\n{link}"
     message_bluesky = message_bluesky[:256 - len(end_bluesky)] + end_bluesky
     try:
-        download(yt_id)
-        download_thumbnail(yt_id)
+        YtDlMan.download(yt_id)
+        YtDlMan.download_thumbnail(yt_id)
     except Exception as exception:
         logger.error(exception)
         logger.info("Can not continue")
@@ -231,41 +229,6 @@ def populate(yt_video):
     except Exception as exception:
         logger.error(exception)
     clean(origen, destino, thumbnail_file)
-
-
-@retry(tries=3, delay=30, logger=logger)
-def download(yt_id):
-    logger.info("Start download")
-    url = f"https://www.youtube.com/watch?v={yt_id}"
-    ydl_opts = {"outtmpl": "/tmp/origen",
-                "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4",
-                "retries": 5}
-    logger.info("Start download")
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-    logger.info("End download")
-
-
-@retry(tries=3, delay=30, logger=logger)
-def download_thumbnail(yt_id):
-    logger.info("Start download thumbnail")
-    tmpl = "/tmp/thumbnail"
-    src = f"{tmpl}.webp"
-    dst = f"{tmpl}.jpg"
-    url = f"https://www.youtube.com/watch?v={yt_id}"
-    ydl_opts = {"outtmpl": tmpl,
-                "writethumbnail": True,
-                "skip_download": True,
-                "retries": 5}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-    if os.path.exists(src):
-        logger.info("Start convert from webp to jpg")
-        image = Image.open(src)
-        image.save(dst)
-        os.remove(src)
-        logger.info("End convert from webp to jpg")
-    logger.info("End download thumbail")
 
 
 def convert(origen, destino):
