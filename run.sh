@@ -26,4 +26,5 @@ gunicorn main:app -k uvicorn.workers.UvicornWorker \
 	--chdir /app \
 	--threads 1 \
 	--access-logfile - \
+    --timeout 600 \
 	-b 0.0.0.0:8000

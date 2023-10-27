@@ -111,7 +111,7 @@ async def get_redirect(request: Request):
     for item in str(request.query_params).split("&"):
         key, value = item.split("=")
         params[key] = value
-    print(params)
+    logger.debug(params)
     tw = Twitter(TW_CONFIG)
     tw.get_access_token(params["code"])
     return {"status": "OK", "message": "Twitter configurate"}
