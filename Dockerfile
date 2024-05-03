@@ -1,7 +1,7 @@
 ###############################################################################
 ## Builder
 ###############################################################################
-FROM alpine:3.18 as builder
+FROM alpine:3.19 as builder
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
@@ -11,14 +11,13 @@ ENV POETRY_NO_INTERACTION=1 \
 RUN echo "**** install Python ****" && \
     apk add --update --no-cache --virtual \
             .build-deps \
-            gcc~=12.2 \
+            gcc~=13.2 \
             musl-dev~=1.2 \
             python3-dev~=3.11 \
             python3~=3.11 \
-            py3-pip~=23.1 && \
-    rm -rf /var/lib/apt/lists/* && \
-    echo "**** install Poetry ****" && \
-    pip install --no-cache-dir poetry==1.6.1
+            py3-pip~=23.3 \
+            poetry~=1.7 && \
+    rm -rf /var/lib/apt/lists/*
 
 
 WORKDIR /app
@@ -31,7 +30,7 @@ RUN echo "**** install Python dependencies ****" && \
 ###############################################################################
 ## Final image
 ###############################################################################
-FROM alpine:3.18
+FROM alpine:3.19
 
 LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
 
@@ -44,8 +43,8 @@ ENV VIRTUAL_ENV=/app/.venv \
 
 RUN echo "**** install Python ****" && \
     apk add --update --no-cache \
-            ffmpeg~=6.0 \
-            curl~=8.3 \
+            ffmpeg~=6.1 \
+            curl~=8.5 \
             python3~=3.11 && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /app/tmp && \
