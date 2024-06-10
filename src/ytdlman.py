@@ -25,8 +25,8 @@
 import json
 import logging
 import os
-import subprocess
 import yt_dlp
+from plumbum import local
 from datetime import datetime
 from PIL import Image
 from retry import retry
@@ -40,8 +40,8 @@ class YtDlMan:
     @staticmethod
     def self_update():
         logger.info("self_update")
-        output = subprocess.run(["pip", "install", "--upgrade", "yt-dlp"],
-                                capture_output=True, text=True)
+        pip = local["pip"]
+        output = pip["install", "--upgrade", "yt-dlp"]()
         logger.debug(output)
 
     @staticmethod
@@ -80,15 +80,17 @@ class YtDlMan:
     @staticmethod
     @retry(tries=3, delay=30, logger=logger)
     def get_videos(yt_channel, published_at="1970-01-01T00:00:00Z"):
+        logger.debug(f"channel: {yt_channel} and published_at: {published_at}")
         published_at = datetime\
                 .strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")\
                 .strftime("%Y%m%d")
         logger.info("Search videos")
         videos = []
         url = f"https://www.youtube.com/channel/{yt_channel}"
-        output = subprocess.run(["yt-dlp", "--dateafter", published_at,
-                                 "--dump-json", "--break-on-reject", url],
-                                capture_output=True, text=True)
+        yt_dlp_bin = local["yt-dlp"]
+        output = yt_dlp_bin["--dateafter", published_at, "--dump-json",
+                            "--break-on-reject", url]()
+        logger.debug(f"Output: {output}")
         for item in output.stdout.split("\n"):
             if item:
                 item = json.loads(item)
