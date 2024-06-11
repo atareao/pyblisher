@@ -42,8 +42,6 @@ class YtDlMan:
         logger.info("self_update")
         pip = local["pip"]
         output = pip["install", "--upgrade", "yt-dlp"]()
-        logger.debug(output)
-
     @staticmethod
     @retry(tries=3, delay=30, logger=logger)
     def download(yt_id):
@@ -81,17 +79,21 @@ class YtDlMan:
     @retry(tries=3, delay=30, logger=logger)
     def get_videos(yt_channel, published_at="1970-01-01T00:00:00Z"):
         logger.debug(f"channel: {yt_channel} and published_at: {published_at}")
+        cookies = os.getenv("COOKIES")
+        logger.debug(f"cookies: {cookies}")
         published_at = datetime\
                 .strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")\
                 .strftime("%Y%m%d")
-        logger.info("Search videos")
+        logger.info(f"Search videos at: {published_at}")
         videos = []
         url = f"https://www.youtube.com/channel/{yt_channel}"
         yt_dlp_bin = local["yt-dlp"]
-        output = yt_dlp_bin["--dateafter", published_at, "--dump-json",
-                            "--break-on-reject", url]()
+        p = yt_dlp_bin.popen(["--dateafter", published_at, "--dump-json",
+                            "--break-on-reject", "--cookies", cookies, url])
+        p.wait()
+        output, err = p.communicate()
         logger.debug(f"Output: {output}")
-        for item in output.stdout.split("\n"):
+        for item in output.split("\n"):
             if item:
                 item = json.loads(item)
                 ts = datetime.strptime(item["upload_date"], "%Y%m%d")

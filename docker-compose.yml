@@ -14,15 +14,19 @@ services:
 
   pyblisher:
     build: .
-    image: atareao/pyblisher:v1.3
+    image: atareao/pyblisher:v1.6.1
     init: true
     env_file:
       - ./.env
     volumes:
       - ./database.db:/app/database.db
       - ./peertube.toml:/app/peertube.toml
+      - ./cookies.txt:/app/cookies.txt
     networks:
       - internal
+    ports:
+      - 8000:8000
+
 
 networks:
   internal: {}

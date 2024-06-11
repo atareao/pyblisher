@@ -124,6 +124,7 @@ async def update():
     yt_channel = os.getenv("YT_CHANNEL")
     db_video = Video.get_last_video_published()
     if db_video:
+        logger.debug(f"published_at: {db_video.published_at}")
         yt_videos = YtDlMan.get_videos(yt_channel, db_video.published_at)
         for yt_video in yt_videos:
             if yt_video["yt_id"] != db_video.yt_id:

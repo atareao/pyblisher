@@ -1,2 +1,2 @@
-@reboot curl http://pyblisher:8000/update/
+#@reboot curl http://pyblisher:8000/update/
 19 00 * * * curl http://pyblisher:8000/update/
