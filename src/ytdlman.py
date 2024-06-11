@@ -49,7 +49,8 @@ class YtDlMan:
         url = f"https://www.youtube.com/watch?v={yt_id}"
         ydl_opts = {"outtmpl": "/tmp/origen",
                     "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4",
-                    "retries": 5}
+                    "retries": 5,
+                    "cookiefile": "/app/cookies.txt"}
         logger.info("Start download")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
@@ -65,7 +66,8 @@ class YtDlMan:
         ydl_opts = {"outtmpl": tmpl,
                     "writethumbnail": True,
                     "skip_download": True,
-                    "retries": 5}
+                    "retries": 5,
+                    "cookiefile": "/app/cookies.txt"}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
         if os.path.exists(src):

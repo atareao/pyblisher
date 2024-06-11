@@ -34,9 +34,10 @@ class YouTube:
 
     def __init__(self, key):
         self.__key = key
-        print(f"Key: {key}")
 
     def get_videos(self, channel_id, published_after=None, next_token=None):
+        logger.debug(f"get_videos channel_id: {channel_id}, published_after: "
+                     f"{published_after}, next_token: {next_token}")
         videos = []
         url = f"{URL}/search"
         params = {"part": "snippet",
@@ -56,7 +57,7 @@ class YouTube:
                 if item['snippet']['title'].lower() == 'private video' or \
                         item['snippet']['title'].lower() == 'deleted video':
                     continue
-                print(item)
+                logger.debug(item)
                 video_id = item['id']['videoId']
                 link = f"{YTURL}/watch?v={video_id}"
                 video = {
@@ -78,6 +79,8 @@ class YouTube:
         return videos
 
     def get_channels(self, for_user_name, next_token=None):
+        logger.debug(f"get_channels for_user_name: {for_user_name}, "
+                     f"next_token: {next_token}")
         channels = []
         url = f"{URL}/channels"
         params = {"part": "snippet",
@@ -89,7 +92,7 @@ class YouTube:
         response = requests.get(url, params=params)
         if response.status_code == 200:
             data = response.json()
-            print(data)
+            logger.debug(data)
         else:
             logger.error(response.status_code)
             logger.error(response.text)
@@ -97,6 +100,8 @@ class YouTube:
 
     def get_videos_from_list(self, playlist_id, next_token=None,
                              reverse_list=False):
+        logger.debug(f"get_videos_from_list playlist_id: {playlist_id}, "
+                     f"next_token: {next_token}, reverse_list: {reverse_list}")
         videos = []
         url = (f"{URL}/playlistItems?part=snippet&maxResults=50"
                f"&playlistId={playlist_id}&key={self.__key}")
@@ -121,7 +126,9 @@ class YouTube:
                     "position": item['snippet']['position'],
                     "download_link": download_link,
                     "link": link,
-                    "published": False}
+                    "published_at": item["snippet"]["publishedAt"],
+                    "published": False
+                }
                 logger.debug(video)
                 videos.append(video)
             if 'nextPageToken' in data and data['nextPageToken']:
@@ -138,11 +145,14 @@ class YouTube:
         return videos
 
     def get_playlists(self, channel_id, next_token=None):
+        logger.debug(f"get_playlist channel_id: {channel_id}, "
+                     f"next_token: {next_token}")
         playlists = []
         url = (f"{URL}/playlists?part=snippet&maxResults=50"
                f"&channelId={channel_id}&key={self.__key}")
         if next_token:
             url += f"&pageToken={next_token}"
+        logger.debug(f"url: {url}")
         response = requests.get(url=url)
         if response.status_code == 200:
             data = response.json()
@@ -164,17 +174,14 @@ class YouTube:
 
 if __name__ == "__main__":
     import os
-    from video import Video
     from dotenv import load_dotenv
     load_dotenv()
     yt_key = os.getenv('YT_KEY')
     channel_id = os.getenv('YT_CHANNEL')
+    print(yt_key)
+    print(channel_id)
     youtube = YouTube(yt_key)
     yt_videos = youtube.get_videos(channel_id,
-                                   published_after="2023-04-01T16:00:01Z")
+                                   published_after="2024-06-05T16:00:01Z")
     for yt_video in yt_videos:
-        Video.new(yt_video['title'],
-                  yt_video['description'],
-                  yt_video['yt_id'],
-                  yt_video['link'],
-                  yt_video['published_at'])
+        print(yt_video)

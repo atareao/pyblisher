@@ -30,6 +30,7 @@ from matrix import MatrixClient
 from video import Video
 from table import Table
 from ytdlman import YtDlMan
+from ytapi import YouTube
 from threading import Thread
 from plumbum import local
 from twitter import Twitter
@@ -122,10 +123,13 @@ async def update():
     logger.debug("Self update yt-dlp")
     YtDlMan.self_update()
     yt_channel = os.getenv("YT_CHANNEL")
+    yt_key = os.getenv("YT_KEY")
+    youtube = YouTube(yt_key)
     db_video = Video.get_last_video_published()
     if db_video:
         logger.debug(f"published_at: {db_video.published_at}")
-        yt_videos = YtDlMan.get_videos(yt_channel, db_video.published_at)
+        # yt_videos = YtDlMan.get_videos(yt_channel, db_video.published_at)
+        yt_videos = youtube.get_videos(yt_channel, db_video.published_at)
         for yt_video in yt_videos:
             if yt_video["yt_id"] != db_video.yt_id:
                 logger.info("Sin publicar")
@@ -137,7 +141,8 @@ async def update():
                 populate_in_zs([{"status": "publicado", "data": yt_video}])
                 logger.info("Publicado")
     else:
-        yt_videos = YtDlMan.get_videos(yt_channel)
+        # yt_videos = YtDlMan.get_videos(yt_channel)
+        yt_videos = youtube.get_videos(yt_channel)
         for yt_video in yt_videos:
             Video.new(yt_video['title'],
                       yt_video['description'],
