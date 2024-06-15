@@ -51,7 +51,7 @@ RUN echo "**** install Python ****" && \
     mkdir -p /app/conf
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-COPY run.sh ./src /app/
+COPY run.sh ./src ./templates /app/
 
 RUN adduser \
     --disabled-password \
