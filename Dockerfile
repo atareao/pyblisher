@@ -48,10 +48,12 @@ RUN echo "**** install Python ****" && \
             python3~=3.12 && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /app/tmp && \
-    mkdir -p /app/conf
+    mkdir -p /app/conf && \
+    mkdir -p /app/templates
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-COPY run.sh ./src ./templates /app/
+COPY run.sh ./src /app/
+COPY ./templates /app/templates/
 
 RUN adduser \
     --disabled-password \
