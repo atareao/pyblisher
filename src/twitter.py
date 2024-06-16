@@ -34,8 +34,13 @@ from requests_oauthlib import OAuth1
 
 BASE_URI = "https://api.twitter.com"
 MEDIA_ENDPOINT_URL = 'https://upload.twitter.com/1.1/media/upload.json'
+TIMEOUT = (5, 60)
 
 logger = logging.getLogger(__name__)
+
+
+class TwitterException(Exception):
+    pass
 
 
 class Twitter:
@@ -162,7 +167,33 @@ class Twitter:
         except Exception as exception:
             pprint(exception)
 
+    def send_message(self, message):
+        """Send a tweet.
+    
+        This method sends the given message to Twitter. It uses the access
+        token obtained from Twitter's API to authenticate the request.
+    
+        Parameters
+        ----------
+        message : str
+            The message to be sent.
+        """
+        url = f"{BASE_URI}/2/tweets"
+        payload = {"text": message}
+        response = self._post(url, payload)
+        return response
+
     def post(self, message):
+        """Send a tweet.
+    
+        This method sends the given message to Twitter. It uses the access
+        token obtained from Twitter's API to authenticate the request.
+    
+        Parameters
+        ----------
+        message : str
+            The message to be sent.
+        """
         url = f"{BASE_URI}/2/tweets"
         payload = {"text": message}
         try:
@@ -184,11 +215,12 @@ class Twitter:
             "Authorization": f"Bearer {self._access_token}",
             "Content-Type": "application/json"
         }
-        response = requests.post(url=url, headers=headers, json=payload)
-        if response.status_code in [200, 201]:
+        response = requests.post(url=url, headers=headers, json=payload,
+                                 timeout=TIMEOUT)
+        if response.ok:
             return response.json()
         message_error = f"Error {response.status_code}: {response.text}"
-        raise Exception(message_error)
+        raise TwitterException(message_error)
 
     def _get(self, url, params={}):
         headers = {

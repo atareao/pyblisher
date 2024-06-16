@@ -100,6 +100,12 @@ class Table:
         return OrderedDict(columns)
 
     def set(self, column, value):
+        """_summary_
+
+        Args:
+            column (_type_): _description_
+            value (_type_): _description_
+        """
         if value:
             if self.COLUMNS[column]['data_type'] == 'INTEGER':
                 value = int(value) if value else None
@@ -110,6 +116,7 @@ class Table:
         setattr(self, column, value)
 
     def get(self, column):
+
         value = getattr(self, column)
         if value:
             if self.COLUMNS[column]['data_type'] == 'INTEGER':
@@ -123,8 +130,8 @@ class Table:
     @classmethod
     def from_dict(cls, adict):
         item = cls()
-        for column in cls.COLUMNS:
-            if column in adict.keys() and cls.COLUMNS[column]['pk'] is False:
+        for column, value in cls.COLUMNS.items():
+            if column in adict.keys() and value["pk"] is False:
                 setattr(item, column, adict[column])
         return item
 

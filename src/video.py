@@ -21,8 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from table import Table
 import logging
+from table import Table
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +40,34 @@ class Video(Table):
 
     @classmethod
     def get_last_video_published(cls):
+        """
+        Returns the last video published.
+
+        This method fetches all videos, sorts them by publication date
+        (in descending order), and returns the first item in this sorted list.
+        If no videos are found, None is returned.
+
+        :return: The last video published, or None if no such video exists.
+        """
         condition = "published_at IS NOT NULL ORDER BY published_at DESC"
         items = cls.select(condition)
         return items[0] if len(items) > 0 else None
 
     @classmethod
     def new(cls, title, description, yt_id, link, published_at):
+        """
+        Creates a new Video object and saves it to the database.
+
+        Parameters:
+        title (str): The title of the video.
+        description (str): A brief description of the video.
+        yt_id (str): The YouTube ID of the video.
+        link (str): The URL link to the video.
+        published_at (datetime): The date and time the video was published.
+
+        Returns:
+        A new Video object representing the newly created video in the database
+        """
         video = Video.from_dict({"title": title,
                                  "description": description,
                                  "yt_id": yt_id,
@@ -56,6 +78,16 @@ class Video(Table):
 
     @classmethod
     def find_by_yt_id(cls, yt_id):
+        """
+        Finds a video by its YouTube ID.
+
+        This method returns the first video found with the given YouTube ID.
+        If no such video exists, None is returned.
+
+        :param yt_id: The YouTube ID of the video to find.
+        :return: A Video object representing the found video, or None if not
+        found.
+        """
         items = cls.select(f"yt_id='{yt_id}'")
         if items:
             return items[0]

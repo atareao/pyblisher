@@ -25,26 +25,29 @@
 import os
 import sys
 import logging
-import requests
-from matrix import MatrixClient
-from video import Video
-from table import Table
-from ytdlman import YtDlMan
-from ytapi import YouTube
 from threading import Thread
+from secrets import compare_digest
 from plumbum import local
-from twitter import Twitter
-from mastodonapi import MastodonClient
-from fdapi import PeerTube
-from zinc import ZincClient
 from retry import retry
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
-from secrets import compare_digest
 from bluesky import BlueSkyClient
+from matrix import MatrixClient
+from video import Video
+from table import Table
+from telegram import Telegram
+from ytdlman import YtDlMan
+from ytapi import YouTube
+from twitter import Twitter
+from mastodonapi import MastodonClient
+from fdapi import PeerTube
+from zinc import ZincClient
+from utils import Processor
+from discord import Discord
 
 Table.DATABASE = "/app/database.db"
+processor = Processor("/app/templates")
 
 FORMAT = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
@@ -52,7 +55,6 @@ logging.basicConfig(stream=sys.stdout,
                     format=FORMAT,
                     level=logging.getLevelName(LOG_LEVEL))
 logger = logging.getLogger(__name__)
-logging.getLevelName
 Video.inicializate()
 app = FastAPI()
 security = HTTPBasic()
@@ -127,7 +129,7 @@ async def update():
     youtube = YouTube(yt_key)
     db_video = Video.get_last_video_published()
     if db_video:
-        logger.debug(f"published_at: {db_video.published_at}")
+        logger.debug("published_at: %s", db_video.published_at)
         # yt_videos = YtDlMan.get_videos(yt_channel, db_video.published_at)
         yt_videos = youtube.get_videos(yt_channel, db_video.published_at)
         for yt_video in yt_videos:
@@ -160,37 +162,29 @@ async def get_videos():
 
 def populate(yt_video):
     populate_in_zs([yt_video])
-    origen = "/tmp/origen.mp4"
-    destino = "/tmp/destino.mp4"
-    thumbnail_file = "/tmp/thumbnail.jpg"
-    clean(origen, destino, thumbnail_file)
-    yt_id = yt_video["yt_id"]
-    title = yt_video['title']
-    description = yt_video["description"]
-    link = yt_video['link']
-    message = title + '\n\n'
-    largo = 270 - len(message) - len(link)
-    message += yt_video['description'][0:largo] + '...\n\n' + link
-    message_discord = f"**{title}**\n"
-    message_discord += yt_video["description"] + "\n" + link
-    message_mastodon = f"{title}\n{description}"
-    message_matrix = f"{title}\n{description}"
-    max_length = 479 - len(link)
-    if len(message_mastodon) > max_length:
-        message_mastodon = message_mastodon[:max_length]
-    message_mastodon = f"{message_mastodon}\n#atareaoConLinux\n{link}"
-    message_bluesky = f"{title}\n{description}"
-    end_bluesky = f"\n\n#atareaoConLinux\n\n{link}"
-    message_bluesky = message_bluesky[:256 - len(end_bluesky)] + end_bluesky
+    # destino = "/tmp/destino.mp4"
+    # thumbnail_file = "/tmp/thumbnail.jpg"
+    # clean(origen, destino, thumbnail_file)
+    # yt_id = yt_video["yt_id"]
+    # title = yt_video['title']
+    # description = yt_video["description"]
+    # link = yt_video['link']
+    # message = title + '\n\n'
+    # largo = 270 - len(message) - len(link)
+    # message += yt_video['description'][0:largo] + '...\n\n' + link
+    # message_discord = f"**{title}**\n"
+    # message_discord += yt_video["description"] + "\n" + link
+    # message_mastodon = f"{title}\n{description}"
+    # message_matrix = f"{title}\n{description}"
+    # max_length = 479 - len(link)
+    # if len(message_mastodon) > max_length:
+    #     message_mastodon = message_mastodon[:max_length]
+    # message_mastodon = f"{message_mastodon}\n#atareaoConLinux\n{link}"
+    # message_bluesky = f"{title}\n{description}"
+    # end_bluesky = f"\n\n#atareaoConLinux\n\n{link}"
+    # message_bluesky = message_bluesky[:256 - len(end_bluesky)] + end_bluesky
     try:
-        YtDlMan.download(yt_id)
-        YtDlMan.download_thumbnail(yt_id)
-    except Exception as exception:
-        logger.error(exception)
-        logger.info("Can not continue")
-        return
-    try:
-        convert(origen, destino)
+        # convert(origen, destino)
         logger.info("Start save YouTube video")
         Video.new(yt_video['title'],
                   yt_video['description'],
@@ -203,38 +197,42 @@ def populate(yt_video):
         logger.info("Can not continue")
         return
     try:
-        telegramea(message, destino)
+        populate_in_telegram(yt_video)
     except Exception as exception:
         logger.error(exception)
     try:
-        telegramea_al_grupo(message, destino)
+        populate_in_telegram_group(yt_video)
     except Exception as exception:
         logger.error(exception)
     try:
-        discordea(message_discord)
+        populate_in_discord(yt_video)
     except Exception as exception:
         logger.error(exception)
     try:
-        toot(message_mastodon, destino, title, thumbnail_file)
+        populate_in_mastodon(yt_video)
     except Exception as exception:
         logger.error(exception)
     try:
+        populate_in_bluesky(yt_video)
+    except Exception as exception:
+        logger.error(exception)
+    try:
+        populate_in_matrix(yt_video)
+    except Exception as exception:
+        logger.error(exception)
+    try:
+        populate_in_x(yt_video)
+    except Exception as exception:
+        logger.error(exception)
+    try:
+        YtDlMan.download(yt_video["yt_id"])
+        origen = "/tmp/origen.mp4"
+        title = yt_video['title']
+        description = yt_video["description"]
         export2PeerTube(title, description, origen)
+        clean(origen)
     except Exception as exception:
         logger.error(exception)
-    try:
-        populate_in_bluesky(message_bluesky)
-    except Exception as exception:
-        logger.error(exception)
-    try:
-        populate_in_matrix(message_matrix)
-    except Exception as exception:
-        logger.error(exception)
-    try:
-        tweet(message, destino)
-    except Exception as exception:
-        logger.error(exception)
-    clean(origen, destino, thumbnail_file)
 
 
 def convert(origen, destino):
@@ -246,94 +244,92 @@ def convert(origen, destino):
 
 
 @retry(tries=3, delay=10, logger=logger)
-def tweet(message, filename):
+def populate_in_x(yt_video):
     logger.info("Start tweeting")
     config_file = os.getenv("TW_CONFIG")
     tw = Twitter(config_file)
-    tw.populate_video(message, filename)
+    message = processor.process(yt_video, "twitter.html")
+    tw.send_message(message)
     populate_in_zs([{"destination": "twitter", "message": message}])
     logger.info("End tweeting")
 
 
 @retry(tries=3, delay=5, logger=logger)
-def toot(message, filename, description, thumbnail):
+def populate_in_mastodon(yt_video):
     logger.info("Start message in Mastodon")
     base_uri = os.getenv("MASTODON_BASE_URI")
     access_token = os.getenv("MASTODON_ACCESS_TOKEN")
     mastodon_client = MastodonClient(base_uri, access_token)
-    mastodon_client.toot_with_media2(message, filename, description, thumbnail)
+    message = processor.process(yt_video, "mastodon.html")
+    mastodon_client.send_message(message)
     populate_in_zs([{"destination": "mastodon", "message": message}])
     logger.info("End message in Mastodon")
 
 
 @retry(tries=3, delay=5, logger=logger)
-def populate_in_matrix(message):
+def populate_in_matrix(yt_video):
     logger.info("Start message in Matrix")
     base_url = os.getenv("MATRIX_BASE_URL")
     token = os.getenv("MATRIX_TOKEN")
     room = os.getenv("MATRIX_ROOM")
     matrix_client = MatrixClient(base_url, token, room)
+    message = processor.process(yt_video, "matrix.html")
     matrix_client.populate(message)
     populate_in_zs([{"destination": "matrix", "message": message}])
     logger.info("End message in Matrix")
 
 
 @retry(tries=3, delay=5, logger=logger)
-def populate_in_bluesky(message):
+def populate_in_bluesky(yt_video):
     logger.info("Start message in Bluesky")
     base_url = os.getenv("BLUESKY_BASE_URL")
     user = os.getenv("BLUESKY_USER")
     password = os.getenv("BLUESKY_PASSWORD")
     blue_sky_client = BlueSkyClient(base_url, user, password)
+    message = processor.process(yt_video, "bluesky.html")
     blue_sky_client.post(message)
     populate_in_zs([{"destination": "bluesky", "message": message}])
     logger.info("End message in BlueSky")
 
 
 @retry(tries=3, delay=5, logger=logger)
-def discordea(message):
+def populate_in_discord(yt_video):
     logger.info("Start message in Discord")
     channel = os.getenv("DISCORD_CHANNEL")
     token = os.getenv("DISCORD_TOKEN")
-    url = f"https://discord.com/api/webhooks/{channel}/{token}"
-    data = {"content": message}
-    requests.post(url, data)
+    discord = Discord(channel, token)
+    message = processor.process(yt_video, "discord.html")
+    discord.send_message(message)
     populate_in_zs([{"destination": "discord", "message": message}])
     logger.info("End message in Discord")
 
 
 @retry(tries=3, delay=5, logger=logger)
-def telegramea(message, filename):
+def populate_in_telegram(yt_video):
     logger.info("Start message in Telegram")
     chat_id = os.getenv("TELEGRAM_CHANNEL")
     token = os.getenv("TELEGRAM_TOKEN")
-    data = {"chat_id": chat_id, "caption": message}
-    url = f"https://api.telegram.org/bot{token}/sendVideo"
-    with open(filename, "rb") as fr:
-        requests.post(url, data=data, files={"video": fr})
-        populate_in_zs([{"destination": "telegram", "data": data,
-                        "message": message}])
+    telegram = Telegram(token)
+    message = processor.process(yt_video, "telegram.html")
+    telegram.send_message(message, chat_id)
+    populate_in_zs([{"destination": "telegram", "message": message}])
     logger.info("End message in Telegram")
 
 
 @retry(tries=3, delay=5, logger=logger)
-def telegramea_al_grupo(message, filename):
+def populate_in_telegram_group(yt_video):
     logger.info("Start message in Telegram to the group")
     group = os.getenv("TELEGRAM_GROUP")
     token = os.getenv("TELEGRAM_TOKEN")
     if group is not None and group.find(","):
-        group_id, theme_id = group.split(",")
-        data = {"chat_id": group_id,
-                "caption": message,
-                "message_thread_id": theme_id}
+        chat_id, thread_id = group.split(",")
     else:
-        data = {"chat_id": group,
-                "caption": message}
-    url = f"https://api.telegram.org/bot{token}/sendVideo"
-    with open(filename, "rb") as fr:
-        requests.post(url, data=data, files={"video": fr})
-        populate_in_zs([{"destination": "telegram", "data": data,
-                        "message": message}])
+        chat_id = group
+        thread_id = None
+    telegram = Telegram(token)
+    message = processor.process(yt_video, "telegram.html")
+    telegram.send_message(message, chat_id, thread_id)
+    populate_in_zs([{"destination": "telegram", "message": message}])
     logger.info("End message in Telegram")
 
 
@@ -342,23 +338,19 @@ def export2PeerTube(title, description, filename):
     logger.info("Start export to PeerTube")
     pt_path = os.getenv("PT_PATH")
     channel_id = os.getenv('PT_CHANNEL_ID')
-    peerTube = PeerTube(pt_path)
-    response = peerTube.upload(channel_id, filename, title, description)
+    peertube = PeerTube(pt_path)
+    response = peertube.upload(channel_id, filename, title, description)
     logger.info(response)
     populate_in_zs([{"destination": "peertube", "data": channel_id,
                     "title": title, "description": description}])
     logger.info("End export to PeerTube")
 
 
-def clean(origen, destino, thumbnail_file):
+def clean(origen, destino=None, thumbnail_file=None):
     if os.path.exists(origen):
         os.remove(origen)
-    if os.path.exists(destino):
+    if destino and os.path.exists(destino):
         os.remove(destino)
-    if os.path.exists(thumbnail_file):
+    if thumbnail_file and os.path.exists(thumbnail_file):
         os.remove(thumbnail_file)
 
-
-if __name__ == "__main__":
-    yt_id = "ZZzJhyQHN70"
-    download_thumbnail(yt_id)

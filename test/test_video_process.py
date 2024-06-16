@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2023 Lorenzo Carbonell <a.k.a. atareao>
+# Copyright (c) 2022 Lorenzo Carbonell <a.k.a. atareao>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,35 +21,40 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import requests
-import logging
+import unittest
+import sys
+import os
+sys.path.append(os.path.join("./src"))
+from table import Table
+from video import Video
+from utils import process
 
-logger = logging.getLogger(__name__)
-
-
-def main():
-    import os
-    from dotenv import load_dotenv
-    load_dotenv()
-    message = "Nueva versión de Ubuntu"
-    group = os.getenv("TELEGRAM_GROUP")
-    token = os.getenv("TELEGRAM_TOKEN")
-    if group is not None and group.find(","):
-        group_id, theme_id = group.split(",")
-        data = {"chat_id": group_id, 
-                "text": message,
-                "message_thread_id": theme_id}
-    else:
-        data = {"chat_id": group, 
-                "text": message}
-    print(data)
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    print(url)
-    response = requests.post(url, data=data)
-    print(response)
-    print(response.text)
+Table.DATABASE = 'test.db'
 
 
-if __name__ == "__main__":
-    main()
+class TestVideo(unittest.TestCase):
+    def setUp(self):
+        if os.path.exists(Table.DATABASE):
+            os.remove(Table.DATABASE)
+        Video.inicializate()
 
+    def tearDown(self):
+        if os.path.exists(Table.DATABASE):
+            os.remove(Table.DATABASE)
+
+    def test_create(self):
+        avideo = Video.new("titulo", "description", "yt_id", "link", "fecha")
+        tvideo = Video.get_by_id(avideo.id)
+        self.assertEqual(avideo, tvideo)
+    
+    def test_process(self):
+        avideo = Video.new("titulo", "description", "yt_id", "link", "fecha")
+        tvideo = Video.get_by_id(avideo.id)
+        template = "twitter.html"
+        processed = process(tvideo, template)
+        print(processed)
+        self.assertIsNotNone(processed)
+
+
+if __name__ == '__main__':
+    unittest.main()

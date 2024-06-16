@@ -26,8 +26,8 @@ import sys
 import time
 import argparse
 import json
-import requests
 import logging
+import requests
 from requests_oauthlib import OAuth1
 
 logger = logging.getLogger(__name__)
@@ -39,9 +39,9 @@ POST_TWEET_URL = 'https://api.twitter.com/1.1/statuses/update.json'
 class ImageTweet(object):
 
     def __init__(self, oauth, status_text, file_name):
-        '''
+        """
         Defines image tweet properties
-        '''
+        """
         self.image_filename = file_name
         self.total_bytes = os.path.getsize(self.image_filename)
         self.media_id = None

@@ -28,6 +28,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 BASE_URI = "https://mastodon.social"
+TIMEOUT = (5, 60)
+
+
+class MastodonException(Exception):
+    pass
 
 
 class MastodonClient:
@@ -37,22 +42,30 @@ class MastodonClient:
 
     def test_credentials(self):
         url = f"{self.__base_uri}/api/v1/accounts/verify_credentials"
-        try:
-            response = requests.get(url, headers=self.__headers)
-            if response.status_code == 200:
-                return response.json()
-            message = f"HTTP Code: {response.status_code}. {response.text}"
-            raise Exception(message)
-        except Exception as exception:
-            print(exception)
-        return None
+        response = requests.get(url, headers=self.__headers,
+                                timeout=TIMEOUT)
+        if response.ok:
+            return response.json()
+        message = f"HTTP Code: {response.status_code}. {response.text}"
+        raise MastodonException(message)
+
+    def send_message(self, message):
+        url = f"{self.__base_uri}/api/v1/statuses"
+        data = {"status": message}
+        response = requests.post(url, headers=self.__headers, json=data,
+                                 timeout=TIMEOUT)
+        if response.ok:
+            return response.json()
+        message = f"HTTP Code: {response.status_code}. {response.text}"
+        raise MastodonException(message)
 
     def toot(self, status, media_ids=[]):
         url = f"{self.__base_uri}/api/v1/statuses"
         try:
             data = {"status": status,
                     "media_ids": media_ids}
-            response = requests.post(url, headers=self.__headers, json=data)
+            response = requests.post(url, headers=self.__headers, json=data,
+                                     timeout=TIMEOUT)
             if response.status_code == 200:
                 return response.json()
             message = f"HTTP Code: {response.status_code}. {response.text}"
