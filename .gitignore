@@ -165,3 +165,6 @@ database.db
 peertube.toml
 twitter.conf
 cookies.txt
+.vscode
+.copilot
+*.db
