@@ -248,6 +248,7 @@ def populate_in_x(yt_video):
     logger.info("Start tweeting")
     config_file = os.getenv("TW_CONFIG")
     tw = Twitter(config_file)
+    tw.update_access_token()
     message = processor.process(yt_video, "twitter.html")
     tw.send_message(message)
     populate_in_zs([{"destination": "twitter", "message": message}])
