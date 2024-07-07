@@ -42,6 +42,8 @@ class YtDlMan:
         logger.info("self_update")
         pip = local["pip"]
         output = pip["install", "--upgrade", "yt-dlp"]()
+        logger.debug(output)
+
     @staticmethod
     @retry(tries=3, delay=30, logger=logger)
     def download(yt_id):

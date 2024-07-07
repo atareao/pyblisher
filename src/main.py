@@ -45,6 +45,7 @@ from fdapi import PeerTube
 from zinc import ZincClient
 from utils import Processor
 from discord import Discord
+from linkedin import LinkedIn
 
 Table.DATABASE = "/app/database.db"
 processor = Processor("/app/templates")
@@ -209,10 +210,6 @@ def populate(yt_video):
     except Exception as exception:
         logger.error(exception)
     try:
-        populate_in_mastodon(yt_video)
-    except Exception as exception:
-        logger.error(exception)
-    try:
         populate_in_bluesky(yt_video)
     except Exception as exception:
         logger.error(exception)
@@ -221,18 +218,35 @@ def populate(yt_video):
     except Exception as exception:
         logger.error(exception)
     try:
-        populate_in_x(yt_video)
+        populate_in_linkedin(yt_video)
     except Exception as exception:
         logger.error(exception)
+
+    origen = "/tmp/origen.mp4"
+    destino = "/tmp/destino.mp4"
+    clean(origen, destino)
     try:
         YtDlMan.download(yt_video["yt_id"])
-        origen = "/tmp/origen.mp4"
         title = yt_video['title']
         description = yt_video["description"]
         export2PeerTube(title, description, origen)
-        clean(origen)
     except Exception as exception:
         logger.error(exception)
+
+    if os.path.exists(origen):
+        convert(origen, destino)
+    else:
+        destino = None
+    try:
+        populate_in_x(yt_video, destino)
+    except Exception as exception:
+        logger.error(exception)
+    try:
+        populate_in_mastodon(yt_video, destino)
+    except Exception as exception:
+        logger.error(exception)
+
+    clean(origen, destino)
 
 
 def convert(origen, destino):
@@ -244,25 +258,31 @@ def convert(origen, destino):
 
 
 @retry(tries=3, delay=10, logger=logger)
-def populate_in_x(yt_video):
+def populate_in_x(yt_video, video=None):
     logger.info("Start tweeting")
     config_file = os.getenv("TW_CONFIG")
     tw = Twitter(config_file)
-    tw.update_access_token()
     message = processor.process(yt_video, "twitter.html")
-    tw.send_message(message)
+    if video:
+        tw.populate_video(message, video)
+    else:
+        tw.update_access_token()
+        tw.send_message(message)
     populate_in_zs([{"destination": "twitter", "message": message}])
     logger.info("End tweeting")
 
 
 @retry(tries=3, delay=5, logger=logger)
-def populate_in_mastodon(yt_video):
+def populate_in_mastodon(yt_video, video=None):
     logger.info("Start message in Mastodon")
     base_uri = os.getenv("MASTODON_BASE_URI")
     access_token = os.getenv("MASTODON_ACCESS_TOKEN")
     mastodon_client = MastodonClient(base_uri, access_token)
     message = processor.process(yt_video, "mastodon.html")
-    mastodon_client.send_message(message)
+    if video:
+        mastodon_client.toot_with_media(message, video)
+    else:
+        mastodon_client.send_message(message)
     populate_in_zs([{"destination": "mastodon", "message": message}])
     logger.info("End message in Mastodon")
 
@@ -303,6 +323,18 @@ def populate_in_discord(yt_video):
     discord.send_message(message)
     populate_in_zs([{"destination": "discord", "message": message}])
     logger.info("End message in Discord")
+
+
+@retry(tries=3, delay=5, logger=logger)
+def populate_in_linkedin(yt_video):
+    logger.info("Start message in LinkedIn")
+    organization = os.getenv("LINKEDIN_ORGANIZATION")
+    token = os.getenv("LINKEDIN_ACCESS_TOKEN")
+    linkedin = LinkedIn(organization, token)
+    message = processor.process(yt_video, "linkedin.html")
+    linkedin.send_message(message)
+    populate_in_zs([{"destination": "linkedin", "message": message}])
+    logger.info("End message in LinkedIn")
 
 
 @retry(tries=3, delay=5, logger=logger)

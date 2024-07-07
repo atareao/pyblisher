@@ -1,6 +1,5 @@
 import logging
 import requests
-import retry
 
 
 logger = logging.getLogger(__name__)
