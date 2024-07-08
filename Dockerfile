@@ -1,7 +1,7 @@
 ###############################################################################
 ## Builder
 ###############################################################################
-FROM alpine:3.20 as builder
+FROM alpine:3.20 AS builder
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \

@@ -60,13 +60,15 @@ class YouTube:
                 logger.debug(item)
                 video_id = item['id']['videoId']
                 link = f"{YTURL}/watch?v={video_id}"
+                snippet = self.get_snippet(video_id)
+                snippet = snippet if snippet else item["snippet"]
                 video = {
-                    "title": item['snippet']['title'],
-                    "description": item['snippet']['description'],
-                    "thumbnail": item['snippet']['thumbnails']['high']['url'],
+                    "title": snippet['title'],
+                    "description": snippet['description'],
+                    "thumbnail": snippet['thumbnails']['high']['url'],
                     "yt_id": video_id,
                     "link": link,
-                    "published_at": item['snippet']['publishedAt']}
+                    "published_at": snippet['publishedAt']}
                 videos.append(video)
             if 'nextPageToken' in data and data['nextPageToken']:
                 more_videos = self.get_videos(channel_id,
@@ -97,6 +99,24 @@ class YouTube:
             logger.error(response.status_code)
             logger.error(response.text)
         return channels
+
+    def get_snippet(self, yt_id: str) -> dict | None:
+        logger.debug(f"get_description for '{yt_id}'")
+        url = f"{URL}/videos"
+        params = {"part": "snippet",
+                  "id": yt_id,
+                  "key": self.__key}
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if len(data["items"]) > 0:
+                return data["items"][0]["snippet"]
+        else:
+            logger.error(response.status_code)
+            logger.error(response.text)
+            print(response.status_code)
+            print(response.text)
+        return None
 
     def get_videos_from_list(self, playlist_id, next_token=None,
                              reverse_list=False):
@@ -182,6 +202,8 @@ if __name__ == "__main__":
     print(channel_id)
     youtube = YouTube(yt_key)
     yt_videos = youtube.get_videos(channel_id,
-                                   published_after="2024-06-05T16:00:01Z")
+                                   published_after="2024-07-07T16:00:01Z")
     for yt_video in yt_videos:
         print(yt_video)
+        yt_id = yt_video["yt_id"]
+        print(yt_id)
