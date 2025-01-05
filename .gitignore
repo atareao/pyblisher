@@ -168,3 +168,4 @@ cookies.txt
 .vscode
 .copilot
 *.db
+threads.conf

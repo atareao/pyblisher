@@ -16,16 +16,18 @@ RUN echo "**** install Python ****" && \
             python3-dev~=3.12 \
             python3~=3.12 \
             py3-pip~=24.0 \
-            poetry~=1.8 && \
+            pip install  --break-system-packages uv && \
     rm -rf /var/lib/apt/lists/*
 
 
 WORKDIR /app
 
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml requirements.lock README.md ./
 
 RUN echo "**** install Python dependencies ****" && \
-    poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
+    uv venv && \
+    source .venv/bin/activate && \
+    uv pip install --no-cache -r requirements.lock
 
 ###############################################################################
 ## Final image

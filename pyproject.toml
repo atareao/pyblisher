@@ -1,85 +1,62 @@
-[tool.poetry]
+[project]
 name = "pyblisher"
 version = "0.1.0"
 description = "A publisher"
-authors = ["Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>"]
-maintainers = ["Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>"]
-license = "MIT"
-readme = "README.md"
-homepage = "https://github.com/atareao/pyblihser"
-repository = "https://github.com/atareao/pyblihser"
-classifiers = [
-    "Development Status :: 4 - Beta"
+authors = [
+    { name = "Lorenzo Carbonell <a.k.a. atareao>", email = "lorenzo.carbonell.cerezo@gmail.com" }
 ]
+dependencies = [
+    "fastapi",
+    "gunicorn",
+    "jinja2",
+    "pillow",
+    "plumbum",
+    "python-dotenv",
+    "requests",
+    "requests-oauthlib",
+    "retry2",
+    "toml",
+    "uvicorn",
+    "yt-dlp",
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+license = { text = "MIT" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
 packages = [
     { include = "src" }
 ]
 
-[tool.poetry.group.dev.dependencies]
-debugpy = "^1.8.0"
-
-[tool.black]
-line-length = 120
-exclude = '''
-/(
-    \.git
-  | \.mypy_cache
-  | \.pytest_cache
-  | \.tox
-  | \.venv
-  | __pycache__
-  | build
-  | dist
-)/
-'''
-
 [tool.ruff]
 line-length = 120
-target-version = "py310"
 
-exclude = [
-  ".bzr",
-  ".direnv",
-  ".eggs",
-  ".git",
-  ".hg",
-  ".mypy_cache",
-  ".nox",
-  ".pants.d",
-  ".ruff_cache",
-  ".svn",
-  ".tox",
-  ".venv",
-  "__pypackages__",
-  "_build",
-  "buck-out",
-  "build",
-  "dist",
-  "node_modules",
-  "venv",
-  ".venv",
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "N",  # PEP8 naming convetions
+    "D"  # pydocstyle
+]
+ignore = [
+    "D401"  # imperative mood
 ]
 
-[tool.ruff.flake8-quotes]
-docstring-quotes = "double"
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
-
-[tool.poetry.dependencies]
-python = "^3.11"
-yt-dlp = "^2024.04.09"
-requests = "^2.31.0"
-plumbum = "^1.8.2"
-requests-oauthlib = "^1.3.1"
-toml = "^0.10.2"
-retry2 = "^0.9.5"
-pillow = "^10.0.1"
-python-dotenv = "^1.0.0"
-fastapi = "^0.103.2"
-gunicorn = "^21.2.0"
-uvicorn = "^0.23.2"
-jinja2 = "^3.1.2"
-pip = "^24.0"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
