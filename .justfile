@@ -34,6 +34,7 @@ test:
                --name {{name}} \
                --detach \
                -p 8000:8000 \
+               --volume $PWD/threads.conf:/app/threads.conf \
                --volume $PWD/twitter.conf:/app/twitter.conf \
                --volume $PWD/database.db:/app/database.db \
                --volume $PWD/peertube.toml:/app/peertube.toml \

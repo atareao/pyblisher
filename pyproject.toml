@@ -35,9 +35,7 @@ dev-dependencies = []
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = [
-    { include = "src" }
-]
+packages = ["pyblisher"]
 
 [tool.ruff]
 line-length = 120
