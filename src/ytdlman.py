@@ -41,7 +41,8 @@ class YtDlMan:
     def self_update():
         logger.info("self_update")
         pip = local["pip"]
-        output = pip["install", "--upgrade", "yt-dlp"]()
+        output = pip["install", "--break-system-packages", "--upgrade",
+                     "yt-dlp"]()
         logger.debug(output)
 
     @staticmethod

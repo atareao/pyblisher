@@ -32,6 +32,7 @@ from retry import retry
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from bluesky import BlueSkyClient
 from matrix import MatrixClient
 from video import Video
@@ -40,6 +41,7 @@ from telegram import Telegram
 from ytdlman import YtDlMan
 from ytapi import YouTube
 from twitter import Twitter
+from threads import Threads
 from mastodonapi import MastodonClient
 from fdapi import PeerTube
 from zinc import ZincClient
@@ -88,6 +90,23 @@ def authorize(credentials: HTTPBasicCredentials = Depends(security)):
             headers={'WWW-Authenticate': 'Basic'},
         )
 
+
+@app.get("/linkedin/auth", dependencies=[Depends(authorize)])
+async def get_linkedin_auth(request: Request):
+    organization = os.getenv("LINKEDIN_ORGANIZATION")
+    token = os.getenv("LINKEDIN_ACCESS_TOKEN")
+    linkedin = LinkedIn(organization, token)
+    linkedin_client_id = os.getenv("LINKEDIN_CLIENT_ID", "")
+    linkedin_client_secret = os.getenv("LINKEDIN_CLIENT_SECRET", "")
+    linkedin.init_client(linkedin_client_id, linkedin_client_secret)
+    html_content = linkedin.get_auth_code()
+    logger.debug(html_content)
+    return HTMLResponse(content=html_content, status_code=200)
+
+
+@app.get("/linkedin/redirect", dependencies=[Depends(authorize)])
+async def get_linkedin_redirect(request: Request):
+    logger.debug(request.query_params)
 
 @app.get("/status/", dependencies=[Depends(authorize)])
 async def get_status():
@@ -198,26 +217,37 @@ def populate(yt_video):
         logger.info("Can not continue")
         return
     try:
+        logger.debug("=== Telegram Channel ===")
         populate_in_telegram(yt_video)
     except Exception as exception:
         logger.error(exception)
     try:
+        logger.debug("=== Telegram Group ===")
         populate_in_telegram_group(yt_video)
     except Exception as exception:
         logger.error(exception)
     try:
+        logger.debug("=== Discord ===")
         populate_in_discord(yt_video)
     except Exception as exception:
         logger.error(exception)
     try:
+        logger.debug("=== Bluesky ===")
         populate_in_bluesky(yt_video)
     except Exception as exception:
         logger.error(exception)
     try:
+        logger.debug("=== Threads ===")
+        populate_in_threads(yt_video)
+    except Exception as exception:
+        logger.error(exception)
+    try:
+        logger.debug("=== Matrix ===")
         populate_in_matrix(yt_video)
     except Exception as exception:
         logger.error(exception)
     try:
+        logger.debug("=== LinkedIn ===")
         populate_in_linkedin(yt_video)
     except Exception as exception:
         logger.error(exception)
@@ -238,10 +268,12 @@ def populate(yt_video):
     else:
         destino = None
     try:
+        logger.debug("=== Twitter ===")
         populate_in_x(yt_video, destino)
     except Exception as exception:
         logger.error(exception)
     try:
+        logger.debug("=== Mastodon ===")
         populate_in_mastodon(yt_video, destino)
     except Exception as exception:
         logger.error(exception)
@@ -347,6 +379,17 @@ def populate_in_telegram(yt_video):
     telegram.send_message(message, chat_id)
     populate_in_zs([{"destination": "telegram", "message": message}])
     logger.info("End message in Telegram")
+
+
+@retry(tries=3, delay=5, logger=logger)
+def populate_in_threads(yt_video):
+    logger.info("Start message in Threads")
+    config_file = os.getenv("TH_CONFIG")
+    threads = Threads(config_file)
+    message = processor.process(yt_video, "threads.html")
+    threads.populate_text(message)
+    populate_in_zs([{"destination": "threads", "message": message}])
+    logger.info("End message in Threads")
 
 
 @retry(tries=3, delay=5, logger=logger)

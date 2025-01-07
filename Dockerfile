@@ -42,6 +42,7 @@ RUN echo "**** install Python ****" && \
     apk add --update --no-cache \
             ffmpeg~=6.1 \
             curl~=8.11 \
+            py3-pip~=24.3 \
             python3~=3.12 && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /app/tmp && \
