@@ -56,6 +56,7 @@ class LinkedIn:
                 "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
             }
         }
+        print("payload: %s", payload)
         url = f"{self._base_url}/v2/ugcPosts"
         response = requests.post(url, json=payload, headers=self._headers,
                                  timeout=TIMEOUT)
