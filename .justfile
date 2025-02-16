@@ -15,9 +15,10 @@ rebuild:
 build:
     echo {{version}}
     echo {{name}}
-    docker build -t {{user}}/{{name}}:{{version}} \
-                 -t {{user}}/{{name}}:latest \
-                 .
+    DOCKER_BUIDKIT=1 docker build \
+                -t {{user}}/{{name}}:{{version}} \
+                -t {{user}}/{{name}}:latest \
+                .
 
 push:
     docker push {{user}}/{{name}}:{{version}}

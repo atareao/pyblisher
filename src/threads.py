@@ -15,6 +15,7 @@ class ThreadsException(Exception):
 class Threads:
     def __init__(self, config_file):
         self._config_file = config_file
+        self._config = {}
         self._load()
 
     def _load(self):

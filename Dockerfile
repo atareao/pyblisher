@@ -10,19 +10,23 @@ RUN echo "**** install Python ****" && \
             musl-dev~=1.2 \
             python3-dev~=3.12 \
             python3~=3.12 \
-            py3-pip~=24.3 \
             uv=~0.5  &&\
     rm -rf /var/lib/apt/lists/*
 
 
 WORKDIR /app
 
-COPY pyproject.toml requirements.lock README.md ./
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
 
-RUN echo "**** install Python dependencies ****" && \
-    uv venv && \
-    source .venv/bin/activate && \
-    uv pip install --no-cache -r requirements.lock
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
+# Install the project's dependencies using the lockfile and settings
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --no-dev
 
 ###############################################################################
 ## Final image
@@ -41,8 +45,7 @@ ENV VIRTUAL_ENV=/app/.venv \
 RUN echo "**** install Python ****" && \
     apk add --update --no-cache \
             ffmpeg~=6.1 \
-            curl~=8.11 \
-            py3-pip~=24.3 \
+            curl~=8.12 \
             python3~=3.12 && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /app/tmp && \
