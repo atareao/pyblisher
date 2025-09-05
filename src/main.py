@@ -30,6 +30,7 @@ from secrets import compare_digest
 from plumbum import local
 from retry import retry
 from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -60,6 +61,14 @@ logging.basicConfig(stream=sys.stdout,
 logger = logging.getLogger(__name__)
 Video.inicializate()
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
 security = HTTPBasic()
 
 templates = Jinja2Templates(directory="templates")

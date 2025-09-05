@@ -20,7 +20,8 @@ class LinkedIn:
         self._headers = {
             "Authorization": f"Bearer {token}",
             "X-Restli-Protocol-Version": "2.0.0",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
         }
 
     def init_client(self, client_id: str, client_secret: str):
